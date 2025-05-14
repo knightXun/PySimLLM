@@ -6,14 +6,13 @@ import math
 class GroupType:
     pass
 
-class AstraSim:
-    class ComType:
-        None = 0
-        Reduce_Scatter = 1
-        All_Gather = 2
-        All_Reduce = 3
-        All_to_All = 4
-        All_Reduce_All_to_All = 5
+class ComType:
+    None = 0
+    Reduce_Scatter = 1
+    All_Gather = 2
+    All_Reduce = 3
+    All_to_All = 4
+    All_Reduce_All_to_All = 5
 
 class MockNcclGroup:
     def genringchannels(self, rank, type):
@@ -68,7 +67,7 @@ class State:
     Input_Gradient = 3
 
 class ComType:
-    None = 0
+    NONE = 0
     Reduce_Scatter = 1
     All_Gather = 2
     All_Reduce = 3

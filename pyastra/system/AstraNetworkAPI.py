@@ -1,5 +1,6 @@
 import abc
 from enum import Enum
+import copy
 
 
 class ComputeMetaData:
@@ -87,6 +88,8 @@ class sim_request:
         self.layerNum = layerNum
         self.flowTag = flowTag
 
+    def clone(self):
+        return copy.deepcopy(self)
 
 class timespec_t:
     def __init__(self, time_res=time_type_e.SE, time_val=0):

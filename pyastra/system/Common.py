@@ -6,11 +6,11 @@ class AstraNetworkAPI:
     pass
 
 class GPUType(enum.Enum):
-    A100 = 'A100'
-    A800 = 'A800'
-    H100 = 'H100'
-    H800 = 'H800'
-    NONE = 'NONE'
+    A100 = 0
+    A800 = 1
+    H100 = 2
+    H800 = 3
+    NONE = 4
 
 CLOCK_PERIOD = 1
 FREQ = 1000.0 / CLOCK_PERIOD
@@ -18,119 +18,119 @@ GBps = 1.0 / (1024 * 1024 * 1024)
 Tick = int
 
 class ComType(enum.Enum):
-    None = 'None'
-    Reduce_Scatter = 'Reduce_Scatter'
-    All_Gather = 'All_Gather'
-    All_Reduce = 'All_Reduce'
-    All_to_All = 'All_to_All'
-    All_Reduce_All_to_All = 'All_Reduce_All_to_All'
-    All_Reduce_NVLS = 'All_Reduce_NVLS'
+    None = 0
+    Reduce_Scatter = 1
+    All_Gather = 2
+    All_Reduce = 3
+    All_to_All = 4
+    All_Reduce_All_to_All = 5
+    All_Reduce_NVLS = 6
 
 class CollectiveOptimization(enum.Enum):
-    Baseline = 'Baseline'
-    LocalBWAware = 'LocalBWAware'
+    Baseline = 0
+    LocalBWAware = 1
 
 class CollectiveImplementationType(enum.Enum):
-    Ring = 'Ring'
-    OneRing = 'OneRing'
-    Direct = 'Direct'
-    OneDirect = 'OneDirect'
-    AllToAll = 'AllToAll'
-    DoubleBinaryTreeLocalAllToAll = 'DoubleBinaryTreeLocalAllToAll'
-    LocalRingNodeA2AGlobalDBT = 'LocalRingNodeA2AGlobalDBT'
-    HierarchicalRing = 'HierarchicalRing'
-    DoubleBinaryTree = 'DoubleBinaryTree'
-    HalvingDoubling = 'HalvingDoubling'
-    OneHalvingDoubling = 'OneHalvingDoubling'
-    NcclFlowModel = 'NcclFlowModel'
-    NcclTreeFlowModel = 'NcclTreeFlowModel'
+    Ring = 0
+    OneRing = 1
+    Direct = 2
+    OneDirect = 3
+    AllToAll = 4
+    DoubleBinaryTreeLocalAllToAll = 5
+    LocalRingNodeA2AGlobalDBT = 6
+    HierarchicalRing = 7
+    DoubleBinaryTree = 8
+    HalvingDoubling = 9
+    OneHalvingDoubling = 10
+    NcclFlowModel = 11
+    NcclTreeFlowModel = 12
 
 class CollectiveBarrier(enum.Enum):
-    Blocking = 'Blocking'
-    Non_Blocking = 'Non_Blocking'
+    Blocking = 0
+    Non_Blocking = 1
 
 class SchedulingPolicy(enum.Enum):
-    LIFO = 'LIFO'
-    FIFO = 'FIFO'
-    HIGHEST = 'HIGHEST'
-    None = 'None'
+    LIFO = 0
+    FIFO = 1
+    HIGHEST = 2
+    None = 3
 
 class IntraDimensionScheduling(enum.Enum):
-    FIFO = 'FIFO'
-    RG = 'RG'
-    SmallestFirst = 'SmallestFirst'
-    LessRemainingPhaseFirst = 'LessRemainingPhaseFirst'
+    FIFO = 0
+    RG = 1
+    SmallestFirst = 2
+    LessRemainingPhaseFirst = 3
 
 class InterDimensionScheduling(enum.Enum):
-    Ascending = 'Ascending'
-    OnlineGreedy = 'OnlineGreedy'
-    RoundRobin = 'RoundRobin'
-    OfflineGreedy = 'OfflineGreedy'
-    OfflineGreedyFlex = 'OfflineGreedyFlex'
+    Ascending = 0
+    OnlineGreedy = 1
+    RoundRobin = 2
+    OfflineGreedy = 3
+    OfflineGreedyFlex = 4
 
 class InjectionPolicy(enum.Enum):
-    Infinite = 'Infinite'
-    Aggressive = 'Aggressive'
-    SemiAggressive = 'SemiAggressive'
-    ExtraAggressive = 'ExtraAggressive'
-    Normal = 'Normal'
+    Infinite = 0
+    Aggressive = 1
+    SemiAggressive = 2
+    ExtraAggressive = 3
+    Normal = 4
 
 class PacketRouting(enum.Enum):
-    Hardware = 'Hardware'
-    Software = 'Software'
+    Hardware = 0
+    Software = 1
 
 class BusType(enum.Enum):
-    Both = 'Both'
-    Shared = 'Shared'
-    Mem = 'Mem'
+    Both = 0
+    Shared = 1
+    Mem = 2
 
 class StreamState(enum.Enum):
-    Created = 'Created'
-    Transferring = 'Transferring'
-    Ready = 'Ready'
-    Executing = 'Executing'
-    Zombie = 'Zombie'
-    Dead = 'Dead'
+    Created = 0
+    Transferring = 1
+    Ready = 2
+    Executing = 3
+    Zombie = 4
+    Dead = 5
 
 class EventType(enum.Enum):
-    NONE = 'NONE'
-    RendezvousSend = 'RendezvousSend'
-    RendezvousRecv = 'RendezvousRecv'
-    CallEvents = 'CallEvents'
-    PacketReceived = 'PacketReceived'
-    PacketSent = 'PacketSent'
-    PacketSentFinshed = 'PacketSentFinshed'
-    WaitForVnetTurn = 'WaitForVnetTurn'
-    NCCL_General = 'NCCL_General'
-    General = 'General'
-    TX_DMA = 'TX_DMA'
-    RX_DMA = 'RX_DMA'
-    Wight_Grad_Comm_Finished = 'Wight_Grad_Comm_Finished'
-    Input_Grad_Comm_Finished = 'Input_Grad_Comm_Finished'
-    Fwd_Comm_Finished = 'Fwd_Comm_Finished'
-    Wight_Grad_Comm_Finished_After_Delay = 'Wight_Grad_Comm_Finished_After_Delay'
-    Input_Grad_Comm_Finished_After_Delay = 'Input_Grad_Comm_Finished_After_Delay'
-    Fwd_Comm_Finished_After_Delay = 'Fwd_Comm_Finished_After_Delay'
-    Workload_Wait = 'Workload_Wait'
-    Reduction_Ready = 'Reduction_Ready'
-    Rec_Finished = 'Rec_Finished'
-    Send_Finished = 'Send_Finished'
-    Processing_Finished = 'Processing_Finished'
-    Delivered = 'Delivered'
-    NPU_to_MA = 'NPU_to_MA'
-    MA_to_NPU = 'MA_to_NPU'
-    Read_Port_Free = 'Read_Port_Free'
-    Write_Port_Free = 'Write_Port_Free'
-    Apply_Boost = 'Apply_Boost'
-    Stream_Transfer_Started = 'Stream_Transfer_Started'
-    Stream_Ready = 'Stream_Ready'
-    Consider_Process = 'Consider_Process'
-    Consider_Retire = 'Consider_Retire'
-    Consider_Send_Back = 'Consider_Send_Back'
-    StreamInit = 'StreamInit'
-    StreamsFinishedIncrease = 'StreamsFinishedIncrease'
-    CommProcessingFinished = 'CommProcessingFinished'
-    NotInitialized = 'NotInitialized'
+    NONE = 0
+    RendezvousSend = 1
+    RendezvousRecv = 2
+    CallEvents = 3
+    PacketReceived = 4
+    PacketSent = 5
+    PacketSentFinshed = 6
+    WaitForVnetTurn = 7
+    NCCL_General = 8
+    General = 9
+    TX_DMA = 10
+    RX_DMA = 11
+    Wight_Grad_Comm_Finished = 12
+    Input_Grad_Comm_Finished = 13
+    Fwd_Comm_Finished = 14
+    Wight_Grad_Comm_Finished_After_Delay = 15
+    Input_Grad_Comm_Finished_After_Delay = 16
+    Fwd_Comm_Finished_After_Delay = 17
+    Workload_Wait = 18
+    Reduction_Ready = 19
+    Rec_Finished = 20
+    Send_Finished = 21
+    Processing_Finished = 22
+    Delivered = 23
+    NPU_to_MA = 24
+    MA_to_NPU = 25
+    Read_Port_Free = 26
+    Write_Port_Free = 27
+    Apply_Boost = 28
+    Stream_Transfer_Started = 29
+    Stream_Ready = 30
+    Consider_Process = 31
+    Consider_Retire = 32
+    Consider_Send_Back = 33
+    StreamInit = 34
+    StreamsFinishedIncrease = 35
+    CommProcessingFinished = 36
+    NotInitialized = 37
 
 class CloneInterface:
     def clone(self):

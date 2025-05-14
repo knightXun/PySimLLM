@@ -2,23 +2,10 @@ import math
 import csv
 import time
 from collections import defaultdict
-
-# 假设的类型定义
-class EventType:
-    Wight_Grad_Comm_Finished = 1
-    Input_Grad_Comm_Finished = 2
-    Fwd_Comm_Finished = 3
-    Wight_Grad_Comm_Finished_After_Delay = 4
-    Input_Grad_Comm_Finished_After_Delay = 5
-    Fwd_Comm_Finished_After_Delay = 6
-    General = 7
-
-class ComType:
-    All_Reduce = 1
-    All_to_All = 2
-    All_Gather = 3
-    Reduce_Scatter = 4
-    None = 0
+from system.ShareBusStat import * 
+from system.Sys import * 
+from system.MockNcclGroup import * 
+from system.Common import * 
 
 class MockNccl:
     class GroupType:

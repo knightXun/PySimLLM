@@ -2,19 +2,15 @@ import time
 import math
 from collections import namedtuple
 
-# 定义 Tick 类型，这里简单用 int 代替
 Tick = int
 
-# 定义 BusType 枚举
 BusType = namedtuple('BusType', ['Shared'])
 BusType.Shared = 'Shared'
 
-# 定义 EventType 枚举
 EventType = namedtuple('EventType', ['MA_to_NPU', 'NPU_to_MA'])
 EventType.MA_to_NPU = 'MA_to_NPU'
 EventType.NPU_to_MA = 'NPU_to_MA'
 
-# 定义 SharedBusStat 类
 class SharedBusStat:
     def __init__(self, bus_type, param1, param2, param3, param4):
         self.bus_type = bus_type
@@ -23,7 +19,6 @@ class SharedBusStat:
         self.param3 = param3
         self.param4 = param4
 
-# 假设 Callable 类
 class Callable:
     def __call__(self):
         pass

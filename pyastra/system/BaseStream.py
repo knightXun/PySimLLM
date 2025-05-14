@@ -53,7 +53,7 @@ class BaseStream(Callable, StreamStat):
             if vn.algorithm is not None:
                 vn.init(self)
         self.state = StreamState.Created
-        self.preferred_scheduling = SchedulingPolicy.None
+        self.preferred_scheduling = SchedulingPolicy.NONE
         self.creation_time = Sys.boostedTick()
         self.total_packets_sent = 0
         self.current_queue_id = -1

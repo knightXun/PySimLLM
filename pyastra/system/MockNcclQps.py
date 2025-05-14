@@ -1,9 +1,6 @@
 from collections import deque
 from typing import Dict, Tuple
 
-# 定义类型别名（Python 3.10+ 支持TypeAlias声明，这里用注释说明）
-# PeerWaitingTasks: 键类型为 (int, (int, int))，值类型为 deque[int]
-# PeerQps: 键类型为 (int, (int, int))，值类型为 int
 
 class NcclQps:
     def __init__(self):
