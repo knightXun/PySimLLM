@@ -1,24 +1,9 @@
 from enum import Enum
 
-# 假设这些类已经在其他地方定义
-class BaseStream:
-    pass
-
-class CallData:
-    pass
-
-class EventType:
-    pass
-
-class Callable:
-    pass
-
-class ComType:
-    pass
-
-class LogicalTopology:
-    pass
-
+from BaseStream import BaseStream
+from system.CallData import CallData
+from system.Callable import Callable
+from system.Common import ComType
 
 class Algorithm(Callable):
     class Name(Enum):

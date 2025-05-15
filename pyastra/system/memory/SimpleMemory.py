@@ -1,15 +1,5 @@
-class AstraNetworkAPI:
-    def sim_get_time(self):
-        # 这里简单返回一个示例对象，实际使用时需要根据情况实现
-        class Time:
-            def __init__(self):
-                self.time_val = 0
-        return Time()
-
-
-class AstraMemoryAPI:
-    pass
-
+from AstraMemoryAPI import AstraMemoryAPI
+from AstraNetworkAPI import AstraNetworkAPI
 
 class SimpleMemory(AstraMemoryAPI):
     def __init__(self, NI, access_latency, npu_access_bw_GB, nic_access_bw_GB):

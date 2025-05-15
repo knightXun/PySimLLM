@@ -1,72 +1,14 @@
-# 头文件部分的模拟，Python 不需要像 C++ 那样的头文件包含机制，但需要导入模块
 import sys
 
-# 假设这些类和枚举在其他地方定义
-class EventType:
-    PacketReceived = 1
-    General = 2
-
-class CallData:
-    pass
-
-class BinaryTree:
-    class Type:
-        Leaf = 1
-        Intermediate = 2
-        Root = 3
-
-    def __init__(self):
-        pass
-
-    def get_parent_id(self, id):
-        pass
-
-    def get_left_child_id(self, id):
-        pass
-
-    def get_right_child_id(self, id):
-        pass
-
-    def get_node_type(self, id):
-        pass
-
-    def is_enabled(self, id):
-        pass
-
-class Algorithm:
-    def __init__(self, layer_num):
-        self.layer_num = layer_num
-
-class PacketBundle:
-    def __init__(self, owner, stream, flag1, flag2, data_size, transmission_type):
-        self.owner = owner
-        self.stream = stream
-        self.flag1 = flag1
-        self.flag2 = flag2
-        self.data_size = data_size
-        self.transmission_type = transmission_type
-
-    def send_to_MA(self):
-        pass
-
-    def send_to_NPU(self):
-        pass
-
-class RecvPacketEventHadndlerData:
-    def __init__(self, stream, id, event_type, queue_id, stream_num):
-        self.stream = stream
-        self.id = id
-        self.event_type = event_type
-        self.queue_id = queue_id
-        self.stream_num = stream_num
-
-class Sys:
-    dummy_data = None
-
-    @staticmethod
-    def handleEvent():
-        pass
-
+from system.topology.RingTopology import RingTopology
+from AstraNetworkAPI import sim_request
+from system.MockNcclChannel import *
+from system.SendPacketEventHandlerData import SendPacketEventHandlerData
+from PacketBundle import PacketBundle
+from system.RecvPacketEventHandlerData import RecvPacketEventHandlerData
+from Algorithm import Algorithm
+from system.Common import ComType, EventType
+from system.topology.BinaryTree import BinaryTree
 
 class DoubleBinaryTreeAllReduce(Algorithm):
     class State:
@@ -117,7 +59,7 @@ class DoubleBinaryTreeAllReduce(Algorithm):
                 "vnet": self.stream.current_queue_id,
                 "layerNum": self.layer_num
             }
-            ehd = RecvPacketEventHadndlerData(self.stream, self.stream.owner.id, EventType.PacketReceived,
+            ehd = RecvPacketEventHandlerData(self.stream, self.stream.owner.id, EventType.PacketReceived,
                                               self.stream.current_queue_id, self.stream.stream_num)
             # 模拟 front_end_sim_recv
             # self.stream.owner.front_end_sim_recv(0, Sys.dummy_data, self.data_size, "UINT8", self.parent, self.stream.stream_num, rcv_req, Sys.handleEvent, ehd)
@@ -137,7 +79,7 @@ class DoubleBinaryTreeAllReduce(Algorithm):
                 "vnet": self.stream.current_queue_id,
                 "layerNum": self.layer_num
             }
-            ehd = RecvPacketEventHadndlerData(self.stream, self.stream.owner.id, EventType.PacketReceived,
+            ehd = RecvPacketEventHandlerData(self.stream, self.stream.owner.id, EventType.PacketReceived,
                                               self.stream.current_queue_id, self.stream.stream_num)
             # 模拟 front_end_sim_recv
             # self.stream.owner.front_end_sim_recv(0, Sys.dummy_data, self.data_size, "UINT8", self.left_child, self.stream.stream_num, rcv_req, Sys.handleEvent, ehd)
@@ -146,7 +88,7 @@ class DoubleBinaryTreeAllReduce(Algorithm):
                 "vnet": self.stream.current_queue_id,
                 "layerNum": self.layer_num
             }
-            ehd2 = RecvPacketEventHadndlerData(self.stream, self.stream.owner.id, EventType.PacketReceived,
+            ehd2 = RecvPacketEventHandlerData(self.stream, self.stream.owner.id, EventType.PacketReceived,
                                                self.stream.current_queue_id, self.stream.stream_num)
             # 模拟 front_end_sim_recv
             # self.stream.owner.front_end_sim_recv(0, Sys.dummy_data, self.data_size, "UINT8", self.right_child, self.stream.stream_num, rcv_req2, Sys.handleEvent, ehd2)
@@ -180,7 +122,7 @@ class DoubleBinaryTreeAllReduce(Algorithm):
                 "vnet": self.stream.current_queue_id,
                 "layerNum": self.layer_num
             }
-            ehd = RecvPacketEventHadndlerData(self.stream, self.stream.owner.id, EventType.PacketReceived,
+            ehd = RecvPacketEventHandlerData(self.stream, self.stream.owner.id, EventType.PacketReceived,
                                               self.stream.current_queue_id, self.stream.stream_num)
             # 模拟 front_end_sim_recv
             # self.stream.owner.front_end_sim_recv(0, Sys.dummy_data, self.data_size, "UINT8", self.parent, self.stream.stream_num, rcv_req, Sys.handleEvent, ehd)
@@ -222,7 +164,7 @@ class DoubleBinaryTreeAllReduce(Algorithm):
                 "vnet": self.stream.current_queue_id,
                 "layerNum": self.layer_num
             }
-            ehd = RecvPacketEventHadndlerData(self.stream, self.stream.owner.id, EventType.PacketReceived,
+            ehd = RecvPacketEventHandlerData(self.stream, self.stream.owner.id, EventType.PacketReceived,
                                               self.stream.current_queue_id, self.stream.stream_num)
             # 模拟 front_end_sim_recv
             # self.stream.owner.front_end_sim_recv(0, Sys.dummy_data, self.data_size, "UINT8", only_child_id, self.stream.stream_num, rcv_req, Sys.handleEvent, ehd)

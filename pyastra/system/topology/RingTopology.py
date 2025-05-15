@@ -1,9 +1,4 @@
-class BasicLogicalTopology:
-    class BasicTopology:
-        Ring = "Ring"
-
-    def __init__(self, topology_type):
-        self.topology_type = topology_type
+from BasicLogicalTopology import BasicLogicalTopology
 
 
 class RingTopology(BasicLogicalTopology):

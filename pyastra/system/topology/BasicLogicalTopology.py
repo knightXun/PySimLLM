@@ -1,5 +1,7 @@
 from enum import Enum
 
+from LogicalTopology import LogicalTopology
+
 
 class BasicLogicalTopology(LogicalTopology):
     class BasicTopology(Enum):

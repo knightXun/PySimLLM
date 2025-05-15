@@ -1,81 +1,12 @@
 import enum
 from collections import deque
 
-
-class EventType(enum.Enum):
-    Send_Finished = 1
-    Rec_Finished = 2
-    Processing_Finished = 3
-    Consider_Retire = 4
-    Consider_Process = 5
-    Consider_Send_Back = 6
-    General = 7
-
-
-class Callable:
-    def call(self, event, data):
-        pass
-
-
-class MemBus:
-    def __init__(self, name1, name2, generator, L, o, g, G, model_shared_bus, communication_delay, some_bool):
-        self.name1 = name1
-        self.name2 = name2
-        self.generator = generator
-        self.L = L
-        self.o = o
-        self.g = g
-        self.G = G
-        self.model_shared_bus = model_shared_bus
-        self.communication_delay = communication_delay
-        self.some_bool = some_bool
-
-    def send_from_MA_to_NPU(self, transmission, size, flag1, flag2, request):
-        pass
-
-    def send_from_NPU_to_MA(self, transmission, size, flag1, flag2, request):
-        pass
-
-
-class MemMovRequest:
-    def __init__(self, request_num, generator, loggp, size, start_time, callable, processed, send_back):
-        self.request_num = request_num
-        self.generator = generator
-        self.loggp = loggp
-        self.size = size
-        self.start_time = start_time
-        self.callable = callable
-        self.processed = processed
-        self.send_back = send_back
-        self.total_transfer_queue_time = 0
-        self.total_transfer_time = 0
-        self.total_processing_queue_time = 0
-        self.total_processing_time = 0
-        self.callEvent = None
-
-    def wait_wait_for_mem_bus(self, iterator):
-        pass
-
-
-class SharedBusStat:
-    def __init__(self, bus_type, transfer_queue_time, transfer_time, processing_queue_time, processing_time):
-        self.bus_type = bus_type
-        self.transfer_queue_time = transfer_queue_time
-        self.transfer_time = transfer_time
-        self.processing_queue_time = processing_queue_time
-        self.processing_time = processing_time
-
-    def update_bus_stats(self, bus_type, request):
-        pass
-
-
-class Sys:
-    @staticmethod
-    def boostedTick():
-        return 0
-
-    def register_event(self, callable, event, data, delay):
-        pass
+from Common import EventType
+from Callable import Callable
+from MemBus import MemBus
+from MemMovRequest import MemMovRequest
+from ShareBusStat import SharedBusStat
+from Sys import Sys
 
 
 class LogGP(Callable):

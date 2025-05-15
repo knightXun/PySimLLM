@@ -8,131 +8,21 @@ import heapq
 from datetime import datetime
 from collections import defaultdict, deque
 
-# 假设存在的基础类 (需要根据实际项目补充实现)
-class Algorithm:
-    def __init__(self, layer_num: int):
-        self.layer_num = layer_num
-        self.stream = None  # 类型应为Stream对象
-        self.name = None
-        self.enabled = True
-        self.comType = None
-        self.final_data_size = 0
-        self.logicalTopology = None
-        self.data_size = 0
 
-class MyPacket:
-    def __init__(self, vnet_id: int, sender: int, receiver: int, msg_size: int, channel_id: int, flow_id: int):
-        self.vnet_id = vnet_id
-        self.sender = sender
-        self.receiver = receiver
-        self.msg_size = msg_size
-        self.channel_id = channel_id
-        self.flow_id = flow_id
-        self.preferred_dest = receiver
-        self.preferred_vnet = vnet_id
+from MemBus import MemBus
+from MyPacket import MyPacket
+from Algorithm import Algorithm
+from MockNcclLog import MockNcclLog, NcclLogLevel
+from Sys import Sys
+from StreamStat import StreamStat
+from Common import ComType, EventType, StreamState
 
-class MockNcclLog:
-    _instance = None
-    @classmethod
-    def get_instance(cls):
-        if not cls._instance:
-            cls._instance = cls()
-        return cls._instance
-    
-    def write_log(self, level: 'NcclLogLevel', message: str, *args):
-        print(f"[{level.name}] {message % args}")
+from system.topology.RingTopology import RingTopology
+from AstraNetworkAPI import sim_request
+from system.MockNcclChannel import *
+from system.SendPacketEventHandlerData import SendPacketEventHandlerData
+from PacketBundle import PacketBundle
 
-class NcclLogLevel(Enum):
-    DEBUG = 0
-    INFO = 1
-    WARNING = 2
-    ERROR = 3
-
-class Sys:
-    dummy_data = bytes()
-    
-    @staticmethod
-    def handleEvent(event_type: 'EventType', data: Any):
-        pass
-
-    @staticmethod
-    def sys_panic(msg: str):
-        raise RuntimeError(msg)
-
-class StreamState(Enum):
-    Created = 0
-    Ready = 1
-    Executing = 2
-    Zombie = 3
-    Dead = 4
-
-class ComType(Enum):
-    All_Reduce = 0
-    All_Gather = 1
-    Reduce_Scatter = 2
-    All_to_All = 3
-    All_Reduce_NVLS = 4
-
-class EventType(Enum):
-    General = 0
-    PacketReceived = 1
-    StreamInit = 2
-    PacketSentFinshed = 3
-
-class MemBus:
-    class Transmition(Enum):
-        Fast = 0
-        Usual = 1
-
-class RingTopology:
-    class Dimension(Enum):
-        Local = 0
-        Remote = 1
-
-    def __init__(self, dimension):
-        self.dimension = dimension
-    
-    def get_nodes_in_ring(self) -> int:
-        return 8  # 示例值
-
-class MockNccl:
-    class SingleFlow:
-        def __init__(self, **kwargs):
-            self.__dict__.update(kwargs)
-    
-    FlowModels = Dict[Tuple[int, int], SingleFlow]
-
-class ncclFlowTag:
-    def __init__(self):
-        self.current_flow_id = -1
-        self.channel_id = -1
-        self.sender_node = -1
-        self.receiver_node = -1
-        self.tree_flow_list = []
-        self.tag_id = 0
-        self.flow_size = 0
-        self.chunk_id = 0
-
-class sim_request:
-    def __init__(self):
-        self.vnet = -1
-        self.layerNum = -1
-        self.reqCount = 0
-        self.tag = -1
-        self.reqType = None
-        self.srcRank = -1
-        self.dstRank = -1
-        self.flowTag = ncclFlowTag()
-
-class PacketBundle:
-    def __init__(self, owner, stream, packets, processed, send_back, size, transmition, channel_id, flow_id):
-        pass
-    
-    def send_to_MA(self):
-        pass
-    
-    def send_to_NPU(self):
-        pass
 
 # 主要类实现
 class NcclTreeFlowModel(Algorithm):
@@ -155,10 +45,10 @@ class NcclTreeFlowModel(Algorithm):
                 layer_num: int,
                 ring_topology: RingTopology,
                 data_size: int,
-                direction: Any,  # RingTopology.Direction类型需要具体定义
+                direction: Any, 
                 injection_policy: Any,
                 boost_mode: bool,
-                ptr_flow_models: Optional[Dict[Tuple[int, int], MockNccl.SingleFlow]],
+                ptr_flow_models: Optional[Dict[Tuple[int, int], SingleFlow]],
                 tree_channels: int):
         super().__init__(layer_num)
         self.start_time = datetime.now()
@@ -179,7 +69,7 @@ class NcclTreeFlowModel(Algorithm):
         self.pQps = {}
         self.zero_latency_packets = defaultdict(int)
         self.non_zero_latency_packets = defaultdict(int)
-        self._flow_models: Dict[Tuple[int, int], MockNccl.SingleFlow] = {}
+        self._flow_models: Dict[Tuple[int, int], SingleFlow] = {}
         self.free_packets = defaultdict(int)
         self.indegree_mapping = defaultdict(int)
         self.packets = defaultdict(deque)

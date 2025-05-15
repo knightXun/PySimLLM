@@ -1,58 +1,10 @@
 from enum import Enum
 
-# 假设这些类和枚举已经定义
-class BasicLogicalTopology:
-    def get_basic_topology_at_dimension(self, _, type):
-        pass
+from ComplexLogicalTopology import ComplexLogicalTopology
+from Common import CollectiveImplementationType
 
-    def get_num_of_nodes_in_dimension(self, _):
-        pass
-
-
-class ComplexLogicalTopology:
-    pass
-
-
-class CollectiveImplementationType(Enum):
-    Ring = 1
-    Direct = 2
-    HalvingDoubling = 3
-    NcclFlowModel = 4
-    NcclTreeFlowModel = 5
-    OneRing = 6
-    OneDirect = 7
-    OneHalvingDoubling = 8
-    DoubleBinaryTree = 9
-
-
-class RingTopology(BasicLogicalTopology):
-    class Dimension(Enum):
-        NA = 0
-
-    def __init__(self, dimension, id, dimension_size, local_id, offset):
-        self.dimension = dimension
-        self.id = id
-        self.dimension_size = dimension_size
-        self.local_id = local_id
-        self.offset = offset
-
-
-class DoubleBinaryTreeTopology(BasicLogicalTopology):
-    def __init__(self, id, dimension_size, local_id, offset):
-        self.id = id
-        self.dimension_size = dimension_size
-        self.local_id = local_id
-        self.offset = offset
-
-
-class ComType:
-    pass
-
-
-class CollectiveImplementation:
-    def __init__(self, type):
-        self.type = type
-
+from RingTopology import RingTopology
+from DoubleBinaryTreeTopology import DoubleBinaryTreeTopology
 
 class GeneralComplexTopology(ComplexLogicalTopology):
     def __init__(self, id, dimension_size, collective_implementation):

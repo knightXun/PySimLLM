@@ -1,31 +1,7 @@
-# 假设存在这些类和枚举类型
-class ComplexLogicalTopology:
-    pass
-
-
-class RingTopology:
-    class Dimension:
-        Local = 0
-        Vertical = 1
-        Horizontal = 2
-
-    def __init__(self, dim, id, num_nodes, position, step):
-        self.dim = dim
-        self.id = id
-        self.num_nodes = num_nodes
-        self.position = position
-        self.step = step
-
-    def get_num_of_nodes_in_dimension(self, _):
-        return self.num_nodes
-
-
-class ComType:
-    pass
-
-
-class BasicLogicalTopology:
-    pass
+from ComplexLogicalTopology import ComplexLogicalTopology
+from RingTopology import RingTopology
+from Common import ComType
+from BasicLogicalTopology import BasicLogicalTopology
 
 
 class Torus3D(ComplexLogicalTopology):

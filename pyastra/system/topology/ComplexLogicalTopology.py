@@ -1,19 +1,10 @@
 from abc import ABC, abstractmethod
 
-class LogicalTopology:
-    class Complexity:
-        Complex = "Complex"
+from LogicalTopology import LogicalTopology
+from BasicLogicalTopology import BasicLogicalTopology
+from Common import ComType
 
-    def __init__(self):
-        self.complexity = None
-
-class BasicLogicalTopology:
-    pass
-
-class ComType:
-    pass
-
-class ComplexLogicalTopology(LogicalTopology, ABC):
+class ComplexLogicalTopology(LogicalTopology):
     def __init__(self):
         super().__init__()
         self.complexity = LogicalTopology.Complexity.Complex

@@ -2,53 +2,10 @@ import math
 import time
 from enum import Enum
 
-# 假设的 BinaryTree、ComplexLogicalTopology、RingTopology、ComType 类和 TreeType 枚举
-class TreeType(Enum):
-    pass
-
-class ComType(Enum):
-    All_Reduce = 1
-
-class BasicLogicalTopology:
-    def get_num_of_nodes_in_dimension(self, dimension):
-        pass
-
-class BinaryTree(BasicLogicalTopology):
-    def __init__(self, id, tree_type, total_tree_nodes, start, stride):
-        self.id = id
-        self.tree_type = tree_type
-        self.total_tree_nodes = total_tree_nodes
-        self.start = start
-        self.stride = stride
-
-    def get_num_of_nodes_in_dimension(self, dimension):
-        # 这里简单返回总节点数，具体实现可根据需求修改
-        return self.total_tree_nodes
-
-class RingTopology(BasicLogicalTopology):
-    class Dimension(Enum):
-        Local = 1
-        Horizontal = 2
-
-    def __init__(self, dimension, id, num_nodes, position, stride):
-        self.dimension = dimension
-        self.id = id
-        self.num_nodes = num_nodes
-        self.position = position
-        self.stride = stride
-
-    def get_num_of_nodes_in_dimension(self, dimension):
-        return self.num_nodes
-
-class ComplexLogicalTopology:
-    def get_num_of_nodes_in_dimension(self, dimension):
-        pass
-
-    def get_num_of_dimensions(self):
-        pass
-
-    def get_basic_topology_at_dimension(self, dimension, type):
-        pass
+from BinaryTree import BinaryTree
+from Common import ComType
+from ComplexLogicalTopology import ComplexLogicalTopology
+from RingTopology import RingTopology
 
 
 class LocalRingGlobalBinaryTree(ComplexLogicalTopology):

@@ -2,109 +2,20 @@ import math
 import sys
 from enum import Enum
 
-# 假设的类和枚举定义
-class ComType(Enum):
-    All_Reduce = 1
-    All_Gather = 2
-    Reduce_Scatter = 3
+from MemBus import MemBus
+from MyPacket import MyPacket
+from Algorithm import Algorithm
+from MockNcclLog import MockNcclLog, NcclLogLevel
+from Sys import Sys
+from StreamStat import StreamStat
+from Common import ComType, EventType, StreamState
 
-class EventType(Enum):
-    General = 1
-    PacketReceived = 2
-    StreamInit = 3
-
-class StreamState(Enum):
-    Created = 1
-    Ready = 2
-    Executing = 3
-    Zombie = 4
-    Dead = 5
-
-class RingTopology:
-    class Dimension(Enum):
-        Local = 1
-
-    class Direction(Enum):
-        Clockwise = 1
-        Anticlockwise = 2
-
-    def __init__(self, dimension):
-        self.dimension = dimension
-        self.nodes = []
-
-    def get_nodes_in_ring(self):
-        return len(self.nodes)
-
-    def get_receiver_node(self, current_node, direction):
-        # 简单示例，实际需要根据拓扑结构实现
-        return current_node
-
-    def is_enabled(self):
-        return True
-
-class Algorithm:
-    def __init__(self, layer_num):
-        self.layer_num = layer_num
-
-class CallData:
-    pass
-
-class Callable:
-    pass
-
-class MyPacket:
-    def __init__(self, msg_size, queue_id, sender, receiver):
-        self.msg_size = msg_size
-        self.current_queue_id = queue_id
-        self.preferred_src = sender
-        self.preferred_dest = receiver
-        self.sender = None
-
-class PacketBundle:
-    def __init__(self, owner, stream, packets, processed, send_back, msg_size, transmition):
-        self.owner = owner
-        self.stream = stream
-        self.packets = packets
-        self.processed = processed
-        self.send_back = send_back
-        self.msg_size = msg_size
-        self.transmition = transmition
-
-    def send_to_MA(self):
-        pass
-
-    def send_to_NPU(self):
-        pass
-
-class Sys:
-    dummy_data = None
-
-    @staticmethod
-    def handleEvent(*args):
-        pass
-
-    @staticmethod
-    def sys_panic(message):
-        print(message)
-        sys.exit(1)
-
-class Stream:
-    def __init__(self, owner, stream_num):
-        self.owner = owner
-        self.stream_num = stream_num
-        self.state = StreamState.Created
-        self.current_queue_id = 0
-
-    def changeState(self, new_state):
-        self.state = new_state
-
-class RecvPacketEventHadndlerData:
-    def __init__(self, stream, id, event_type, vnet, stream_num):
-        self.stream = stream
-        self.id = id
-        self.event_type = event_type
-        self.vnet = vnet
-        self.stream_num = stream_num
+from system.topology.RingTopology import RingTopology
+from AstraNetworkAPI import sim_request
+from system.MockNcclChannel import *
+from system.SendPacketEventHandlerData import SendPacketEventHandlerData
+from PacketBundle import PacketBundle
+from system.RecvPacketEventHandlerData import RecvPacketEventHandlerData
 
 class HalvingDoubling(Algorithm):
     def __init__(self, type, id, layer_num, ring_topology, data_size, boost_mode):
@@ -305,7 +216,7 @@ class HalvingDoubling(Algorithm):
             "vnet": self.stream.current_queue_id,
             "layerNum": self.layer_num
         }
-        ehd = RecvPacketEventHadndlerData(
+        ehd = RecvPacketEventHandlerData(
             self.stream,
             self.stream.owner.id,
             EventType.PacketReceived,

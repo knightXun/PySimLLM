@@ -1,28 +1,8 @@
 import math
 
-# 假设这些类和枚举在别处定义
-class Sys:
-    def __init__(self):
-        self.dim_to_break = -1
-        self.physical_dims = []
-        self.logical_broken_dims = []
-        self.NI = None
-        self.id = 0
-        self.all_generators = []
-
-class NI:
-    def get_BW_at_dimension(self, dim):
-        return 0
-
-class ComType:
-    Reduce_Scatter = 1
-    All_Reduce = 2
-    All_Gather = 3
-
-class InterDimensionScheduling:
-    OfflineGreedy = 1
-    OfflineGreedyFlex = 2
-
+from Sys import Sys
+from Common import ComType, InterDimensionScheduling
+from AstraNetworkAPI import AstraNetworkAPI
 
 class DimElapsedTime:
     def __init__(self, dim_num):

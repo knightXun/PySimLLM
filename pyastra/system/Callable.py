@@ -1,19 +1,13 @@
 from abc import ABC, abstractmethod
 
-
-class CallData:
-    pass
-
-
-EventType = int
+from CallData import CallData
+from Common import EventType
 
 
-class Callable(ABC):
-    @abstractmethod
+class Callable:
     def __del__(self):
         pass
 
-    @abstractmethod
     def call(self, type: EventType, data: CallData):
         pass
 

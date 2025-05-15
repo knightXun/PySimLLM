@@ -1,50 +1,10 @@
-# 假设这些类和常量已经定义
-class Callable:
-    def call(self, event, data):
-        pass
-
-
-class EventType:
-    pass
-
-
-class CallData:
-    pass
-
-
-class StreamStat:
-    pass
-
-
-class MockNcclLog:
-    def __init__(self):
-        self._instance = None
-
-    @staticmethod
-    def getInstance():
-        if MockNcclLog._instance is None:
-            MockNcclLog._instance = MockNcclLog()
-        return MockNcclLog._instance
-
-    def writeLog(self, log_level, message, *args):
-        print(message % args)
-
-
-class NcclLogLevel:
-    DEBUG = "DEBUG"
-    ERROR = "ERROR"
-
-
-class Sys:
-    @staticmethod
-    def boostedTick():
-        return 0
-
-
-class IntData:
-    def __init__(self, value):
-        self.value = value
-
+from Callable import Callable
+from Common import EventType
+from CallData import CallData
+from StreamStat import StreamStat
+from MockNcclLog import MockNcclLog, NcclLogLevel
+from Sys import Sys
+from IntData import IntData
 
 class DataSet(Callable, StreamStat):
     id_auto_increment = 0

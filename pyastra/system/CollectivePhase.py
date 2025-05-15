@@ -1,24 +1,8 @@
-# 头文件部分的翻译
 from typing import Union
-
-# 假设 ComType 是一个自定义类型，这里简单用 int 表示，实际中需要根据情况修改
-ComType = int
-
-class Sys:
-    pass
-
-class Algorithm:
-    def __init__(self):
-        self.data_size = 0
-        self.final_data_size = 0
-        self.comType = ComType()
-        self.enabled = True
-
-    def init(self, stream):
-        pass
-
-class BaseStream:
-    pass
+from Sys import Sys
+from Common import ComType
+from BaseStream import BaseStream
+from collective.Algorithm import Algorithm
 
 class CollectivePhase:
     def __init__(self, generator: Union[Sys, None] = None, queue_id: int = -1, algorithm: Union[Algorithm, None] = None):

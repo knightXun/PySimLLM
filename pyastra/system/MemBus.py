@@ -2,67 +2,17 @@ import time
 import math
 from collections import namedtuple
 
-Tick = int
-
-BusType = namedtuple('BusType', ['Shared'])
-BusType.Shared = 'Shared'
-
-EventType = namedtuple('EventType', ['MA_to_NPU', 'NPU_to_MA'])
-EventType.MA_to_NPU = 'MA_to_NPU'
-EventType.NPU_to_MA = 'NPU_to_MA'
-
-class SharedBusStat:
-    def __init__(self, bus_type, param1, param2, param3, param4):
-        self.bus_type = bus_type
-        self.param1 = param1
-        self.param2 = param2
-        self.param3 = param3
-        self.param4 = param4
-
-class Callable:
-    def __call__(self):
-        pass
-
-# 假设 Sys 类
-class Sys:
-    def register_event(self, callable_obj, event_type, bus_stat, delay):
-        # 这里简单打印事件信息，实际使用时可根据需求修改
-        print(f"Registering event: {event_type} with delay {delay}")
-        time.sleep(delay / 1000)  # 模拟延迟
-        callable_obj()
-
-# 假设 LogGP 类
-class LogGP:
-    def __init__(self, side, generator, L, o, g, G, event_type):
-        self.side = side
-        self.generator = generator
-        self.L = L
-        self.o = o
-        self.g = g
-        self.G = G
-        self.event_type = event_type
-        self.partner = None
-
-    def request_read(self, bytes, processed, send_back, callable_obj):
-        print(f"Requesting read on {self.side} side with {bytes} bytes")
-
-    def attach_mem_bus(self, generator, L, o, g, param, model_shared_bus, communication_delay):
-        print(f"Attaching memory bus on {self.side} side")
-
-# 假设 MockNcclLog 类
-class MockNcclLog:
-    _instance = None
-
-    @classmethod
-    def getInstance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
+from Common import EventType
+from Callable import Callable
+from Sys import Sys 
+from LogGP import LogGP
+from Common import SharedBusStat, BusType
+from MockNcclLog import MockNcclLog
 
 class MemBus:
     class Transmition:
-        Fast = 'Fast'
-        Usual = 'Usual'
+        Fast = 0
+        Usual = 1
 
     def __init__(self, side1, side2, generator, L, o, g, G, model_shared_bus, communication_delay, attach):
         self.NPU_side = LogGP(side1, generator, L, o, g, G, EventType.MA_to_NPU)

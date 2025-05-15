@@ -1,133 +1,18 @@
 from enum import Enum
 from collections import deque
 
-# 假设这些类和枚举已经在其他地方定义
-class ComType(Enum):
-    All_Reduce = 1
-    All_to_All = 2
-    All_Gather = 3
-    Reduce_Scatter = 4
-
-class InjectionPolicy(Enum):
-    Aggressive = 1
-    Normal = 2
-
-class StreamState(Enum):
-    Created = 1
-    Ready = 2
-    Executing = 3
-    Zombie = 4
-    Dead = 5
-
-class Callable:
-    pass
-
-class CallData:
-    pass
-
-class EventType(Enum):
-    General = 1
-    PacketReceived = 2
-    StreamInit = 3
-
-class Sys:
-    dummy_data = None
-
-    @staticmethod
-    def handleEvent():
-        pass
-
-    @staticmethod
-    def boostedTick():
-        return 0
-
-    @staticmethod
-    def sys_panic(message):
-        raise Exception(message)
-
-class Stream:
-    def __init__(self, owner, stream_num, current_queue_id):
-        self.owner = owner
-        self.stream_num = stream_num
-        self.current_queue_id = current_queue_id
-        self.state = StreamState.Created
-
-    def changeState(self, new_state):
-        self.state = new_state
-
-class PacketBundle:
-    def __init__(self, owner, stream, packets, processed, send_back, msg_size, transmition):
-        self.owner = owner
-        self.stream = stream
-        self.packets = packets
-        self.processed = processed
-        self.send_back = send_back
-        self.msg_size = msg_size
-        self.transmition = transmition
-
-    def send_to_MA(self):
-        pass
-
-    def send_to_NPU(self):
-        pass
-
-class MyPacket:
-    def __init__(self, vnet, sender, receiver):
-        self.vnet = vnet
-        self.sender = sender
-        self.preferred_dest = receiver
-        self.preferred_src = sender
-        self.preferred_vnet = vnet
-        self.stream_num = 0
-
-    def set_notifier(self, notifier):
-        pass
-
-class RingTopology:
-    class Direction(Enum):
-        Forward = 1
-        Backward = 2
-
-    class Dimension(Enum):
-        Local = 1
-        Global = 2
-
-    def __init__(self, dimension):
-        self.dimension = dimension
-        self.nodes = []
-
-    def get_nodes_in_ring(self):
-        return len(self.nodes)
-
-    def get_receiver_node(self, id, direction):
-        return (id + 1) % len(self.nodes)
-
-    def get_sender_node(self, id, direction):
-        return (id - 1) % len(self.nodes)
-
-    def is_enabled(self):
-        return True
-
-class Algorithm:
-    def __init__(self, layer_num):
-        self.layer_num = layer_num
-
-class sim_request:
-    def __init__(self):
-        self.srcRank = 0
-        self.dstRank = 0
-        self.tag = 0
-        self.reqType = 0
-        self.vnet = 0
-        self.layerNum = 0
-
-class RecvPacketEventHadndlerData:
-    def __init__(self, stream, id, event_type, vnet, stream_num):
-        self.stream = stream
-        self.id = id
-        self.event_type = event_type
-        self.vnet = vnet
-        self.stream_num = stream_num
+from Callable import Callable
+from CallData import CallData
+from Sys import Sys 
+from StreamStat import StreamStat
+from Common import EventType, ComType, InjectionPolicy, StreamState
+from MyPacket import MyPacket
+from Algorithm import Algorithm
+from PacketBundle import PacketBundle
+from RecvPacketEventHandlerData import RecvPacketEventHandlerData
+from system.topology.RingTopology import RingTopology
+from AstraNetworkAPI import sim_request
+from RecvPacketEventHandlerData import RecvPacketEventHandlerData
 
 class Ring(Algorithm):
     g_ring_inCriticalSection = False
@@ -315,7 +200,7 @@ class Ring(Algorithm):
         rcv_req = sim_request()
         rcv_req.vnet = self.stream.current_queue_id
         rcv_req.layerNum = self.layer_num
-        ehd = RecvPacketEventHadndlerData(self.stream, self.stream.owner.id, EventType.PacketReceived, packet.preferred_vnet, packet.stream_num)
+        ehd = RecvPacketEventHandlerData(self.stream, self.stream.owner.id, EventType.PacketReceived, packet.preferred_vnet, packet.stream_num)
         self.stream.owner.front_end_sim_recv(0, Sys.dummy_data, self.msg_size, 0, packet.preferred_src, self.stream.stream_num, rcv_req, Sys.handleEvent, ehd)
         self.reduce()
         return True

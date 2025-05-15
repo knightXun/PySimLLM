@@ -2,39 +2,9 @@ from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 import math
 
-# 假设的类和枚举类型定义
-class GroupType:
-    pass
+from MockNcclChannel import GroupType
+from MockNcclGroup import MockNcclGroup, ncclInfo
 
-class ComType:
-    None = 0
-    Reduce_Scatter = 1
-    All_Gather = 2
-    All_Reduce = 3
-    All_to_All = 4
-    All_Reduce_All_to_All = 5
-
-class MockNcclGroup:
-    def genringchannels(self, rank, type):
-        pass
-
-    def gettreechannels(self, rank, type):
-        pass
-
-    def get_nvls_channels(self, rank, type):
-        pass
-
-    def get_nvls_tree_channels(self, rank, type):
-        pass
-
-    def getFlowModels(self, type, rank, collective_type, data_size, layer_num, loopstate):
-        pass
-
-    def get_algo_proto_info(self, type, rank, collective_type, data_size):
-        pass
-
-class ncclInfo:
-    pass
 
 class SingleFlow:
     def __init__(self,
@@ -96,6 +66,7 @@ class MockNcclComm:
         self.ringchannels = self.GlobalGroup.genringchannels(rank, type)
         self.treechannels = self.GlobalGroup.gettreechannels(rank, type)
         self.nvlschannels = self.GlobalGroup.get_nvls_channels(rank, type)
+        self.nvlstreechannels = None
         # self.nvlstreechannels = self.GlobalGroup.get_nvls_tree_channels(rank, type)
 
     def get_rings(self) -> Dict[int, Dict[int, List[int]]]:
@@ -121,9 +92,9 @@ class MockNcclComm:
     def get_nvls_tree_channels(self):
         return self.nvlstreechannels
 
-    def get_flow_model(self, data_size: int, collective_type: AstraSim.ComType, layer_num: int, loopstate: State):
+    def get_flow_model(self, data_size: int, collective_type: ComType, layer_num: int, loopstate: State):
         return self.GlobalGroup.getFlowModels(self.type, self.rank, collective_type, data_size, layer_num, loopstate)
 
-    def get_algo_proto_info(self, data_size: int, collective_type: AstraSim.ComType) -> ncclInfo:
+    def get_algo_proto_info(self, data_size: int, collective_type: ComType) -> ncclInfo:
         return self.GlobalGroup.get_algo_proto_info(self.type, self.rank, collective_type, data_size)
     

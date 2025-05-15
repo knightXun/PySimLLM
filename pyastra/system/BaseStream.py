@@ -1,46 +1,15 @@
 # 假设这些类已经在其他地方定义好了
 from typing import List
 
-class Callable:
-    pass
-
-class StreamStat:
-    pass
-
-class RecvPacketEventHadndlerData:
-    pass
-
-class SendPacketEventHandlerData:
-    pass
-
-class SchedulingPolicy:
-    None = None
-
-class ComType:
-    pass
-
-class Tick:
-    pass
-
-class DataSet:
-    pass
-
-class StreamState:
-    Created = None
-
-class CollectivePhase:
-    def __init__(self):
-        self.algorithm = None
-
-    def init(self, stream):
-        if self.algorithm is not None:
-            # 这里需要根据实际的 algorithm 实现来调用相应的初始化方法
-            pass
-
-class Sys:
-    @staticmethod
-    def boostedTick():
-        return 0
+from Callable import Callable
+from StreamStat import StreamStat
+from RecvPacketEventHandlerData import RecvPacketEventHandlerData
+from SendPacketEventHandlerData import SendPacketEventHandlerData
+from Common import ComType, SchedulingPolicy, StreamState
+from DataSet import DataSet
+from StreamStat import StreamStat
+from CollectivePhase import CollectivePhase
+from Sys import Sys
 
 
 class BaseStream(Callable, StreamStat):
@@ -72,7 +41,7 @@ class BaseStream(Callable, StreamStat):
     def changeState(self, state):
         self.state = state
 
-    def consume(self, message: RecvPacketEventHadndlerData):
+    def consume(self, message: RecvPacketEventHandlerData):
         raise NotImplementedError
 
     def sendcallback(self, messages: SendPacketEventHandlerData):

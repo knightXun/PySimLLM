@@ -1,7 +1,10 @@
 import enum
 from typing import Tuple, Dict, Callable
 
-# 假设的模拟时间相关类型和类
+from AstraNetworkAPI import AstraNetworkAPI
+from AstraMemoryAPI import AstraMemoryAPI
+
+
 class time_type_e(enum.Enum):
     NS = 'ns'
 
@@ -10,42 +13,6 @@ class timespec_t:
         self.time_res = None
         self.time_val = None
 
-class sim_comm:
-    pass
-
-class sim_request:
-    pass
-
-class AstraMemoryAPI:
-    pass
-
-class AstraNetworkAPI:
-    def __init__(self, rank):
-        self.rank = rank
-
-    def sim_time_resolution(self):
-        pass
-
-    def sim_finish(self):
-        pass
-
-    def sim_comm_size(self, comm, size):
-        pass
-
-    def sim_get_time(self):
-        pass
-
-    def sim_init(self, MEM):
-        pass
-
-    def sim_schedule(self, delta, fun_ptr, fun_arg):
-        pass
-
-    def sim_send(self, buffer, count, type, dst, tag, request, msg_handler, fun_arg):
-        pass
-
-    def sim_recv(self, buffer, count, type, src, tag, request, msg_handler, fun_arg):
-        pass
 
 
 class WrapperData:

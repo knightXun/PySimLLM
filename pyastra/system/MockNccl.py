@@ -1,4 +1,4 @@
-# 定义常量
+
 NCCL_NUM_ALGORITHMS = 6
 NCCL_ALGO_UNDEF = -1
 NCCL_ALGO_TREE = 0
@@ -44,14 +44,12 @@ ncclFunc_t = {
     "ncclNumFuncs": 8
 }
 
-# LL128最大带宽
 llMaxBws = [
     [39.0, 39.0, 20.4],
     [87.7, 22.5, 19.0],
     [87.7, 22.5, 19.0]
 ]
 
-# 基础延迟
 baseLat = [
     [6.8, 14.0, 0],
     [6.6, 14.0, 8.4],
@@ -61,28 +59,24 @@ baseLat = [
     [0, 0, 23.0]
 ]
 
-# 每个通道的最大环形LL128带宽
 perChMaxRingLL128Bws = [
     [20.0, 20.0, 20.0],
     [20.0, 20.0, 20.0],
     [36.7, 36.7, 36.7]
 ]
 
-# 每个通道的最大树形LL128带宽
 perChMaxTreeLL128Bws = [
     [20.0, 20.0, 20.0],
     [20.0, 20.0, 20.0],
     [36.7, 36.7, 29.0]
 ]
 
-# 每个通道的最大树形带宽
 perChMaxTreeBws = [
     [26.5, 18.5, 10.0],
     [24.0, 23.6, 17.8],
     [38.7, 41.4, 36.0]
 ]
 
-# 硬件延迟
 NCCL_HW_NVLINK = 0
 NCCL_HW_PCI = 1
 NCCL_HW_NET = 2
@@ -113,7 +107,6 @@ hwLat = [
     ]
 ]
 
-# 链路和路径类型
 LINK_LOC = 0
 LINK_NVL = 1
 LINK_PCI = 3
@@ -132,21 +125,18 @@ PATH_SYS = 7
 PATH_NET = 8
 PATH_DIS = 9
 
-# 向上取整函数
 def DIVUP(x, y):
     return (x + y - 1) // y
 
 def alignUp(x, a):
     return (x + a - 1) & (-a)
 
-# 工作类型枚举
 class ncclWorkType:
     ncclWorkTypeUnused = 0
     ncclWorkTypeColl = 1
     ncclWorkTypeP2p = 2
     ncclWorkTypeRegColl = 3
 
-# 工作头结构体
 class ncclWorkHeader:
     def __init__(self):
         self.workNext = 0
@@ -156,7 +146,6 @@ class ncclWorkHeader:
         self.inFifo = 0
         self.type = 0
 
-# 工作元素结构体
 class ncclWorkElem:
     def __init__(self):
         self.flagBits = 0
@@ -176,7 +165,6 @@ class ncclWorkElem:
 
 NCCL_MAX_WORK_ELEMENTS = (NCCL_WORK_SIZE - alignUp(len(ncclWorkHeader().__dict__), alignof(ncclWorkElem())) // len(ncclWorkElem().__dict__))
 
-# 树形校正因子
 treeCorrectionFactor = [
     [1.0, 1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.6, 0.5, 0.4, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.0, 1.0, 1.0],
     [1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.8, 0.8, 0.8, 0.7, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.8, 0.9, 0.9, 0.9, 0.9, 1.0, 1.0],
@@ -187,7 +175,6 @@ MAXCHANNELS = 10
 NCCL_TOPO_MAX_NODES = 10
 NCCL_MAX_TREE_ARITY = 2
 
-# 拓扑图结构体
 class ncclTopoGraph:
     def __init__(self):
         self.id = 0
@@ -206,5 +193,3 @@ class ncclTopoGraph:
         self.nHops = 0
         self.intra = [0] * (MAXCHANNELS * NCCL_TOPO_MAX_NODES)
         self.inter = [0] * (MAXCHANNELS * 2)
-
-    

@@ -1,36 +1,8 @@
-# 假设这些类已经在其他地方定义
-class ComplexLogicalTopology:
-    pass
+from ComplexLogicalTopology import ComplexLogicalTopology
+from Common import ComType
+from DoubleBinaryTreeTopology import DoubleBinaryTreeTopology
+from RingTopology import RingTopology
 
-class DoubleBinaryTreeTopology:
-    def __init__(self, id, total_tree_nodes, start, stride):
-        self.id = id
-        self.total_tree_nodes = total_tree_nodes
-        self.start = start
-        self.stride = stride
-
-    def get_basic_topology_at_dimension(self, dimension, type):
-        # 这里只是占位实现，具体逻辑需要根据实际情况补充
-        return None
-
-class RingTopology:
-    class Dimension:
-        Vertical = 1
-        Local = 2
-        Horizontal = 3
-
-    def __init__(self, dim, id, num_nodes, position, step):
-        self.dim = dim
-        self.id = id
-        self.num_nodes = num_nodes
-        self.position = position
-        self.step = step
-
-    def get_num_of_nodes_in_dimension(self, dimension):
-        return self.num_nodes
-
-class ComType:
-    All_Reduce = 1
 
 class LocalRingNodeA2AGlobalDBT(ComplexLogicalTopology):
     def __init__(self, id, local_dim, node_dim, total_tree_nodes, start, stride):

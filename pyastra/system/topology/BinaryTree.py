@@ -1,12 +1,8 @@
-class Node:
-    def __init__(self, id, parent=None, left_child=None, right_child=None):
-        self.id = id
-        self.parent = parent
-        self.left_child = left_child
-        self.right_child = right_child
+from Node import Node
+from BasicLogicalTopology import BasicLogicalTopology
 
 
-class BinaryTree:
+class BinaryTree(BasicLogicalTopology):
     class TreeType:
         RootMax = 0
         RootMin = 1

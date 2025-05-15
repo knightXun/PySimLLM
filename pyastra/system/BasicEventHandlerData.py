@@ -1,13 +1,7 @@
-# 假设 CallData 类在别处定义
-class CallData:
-    pass
 
-# 假设 Sys 类在别处定义
-class Sys:
-    pass
-
-# 假设 EventType 是一个枚举类型，这里简单用 int 表示
-EventType = int
+from CallData import CallData
+from Sys import Sys
+from Common import EventType
 
 class BasicEventHandlerData(CallData):
     def __init__(self, *args):

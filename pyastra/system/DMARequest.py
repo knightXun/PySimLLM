@@ -1,7 +1,4 @@
-# 定义一个类来模拟 Callable
-class Callable:
-    pass
-
+from Callable import Callable
 
 class DMA_Request:
     def __init__(self, id, slots, latency, bytes, stream_owner=None):

@@ -1,29 +1,11 @@
 import time
 
-class Callable:
-    pass
-
-class CallData:
-    pass
-
-class SharedBusStat:
-    def __init__(self, bus_type, a, b, c, d):
-        self.bus_type = bus_type
-        self.total_shared_bus_transfer_delay = 0
-        self.total_shared_bus_processing_delay = 0
-        self.total_shared_bus_processing_queue_delay = 0
-        self.total_shared_bus_transfer_queue_delay = 0
-
-class Sys:
-    @staticmethod
-    def boostedTick():
-        return time.time()
-
-class LogGP:
-    talking_it = None
-
-    def call(self, callEvent, data):
-        pass
+from Callable import Callable
+from Sys import Sys 
+from LogGP import LogGP
+from ShareBusStat import SharedBusStat
+from CallData import CallData
+from Common import EventType
 
 class MemMovRequest(Callable, SharedBusStat):
     id = 0
@@ -46,7 +28,7 @@ class MemMovRequest(Callable, SharedBusStat):
         self.request_num = request_num
         self.start_time = Sys.boostedTick()
         self.mem_bus_finished = True
-        self.callEvent = "General"
+        self.callEvent = EventType.General
         self.pointer = None
 
     def call(self, event, data):
@@ -61,7 +43,6 @@ class MemMovRequest(Callable, SharedBusStat):
         self.loggp.call(self.callEvent, data)
 
     def update_bus_stats(self, data):
-        # 假设这里的更新逻辑是简单的累加，可根据实际情况修改
         self.total_shared_bus_transfer_delay += data.total_shared_bus_transfer_delay
         self.total_shared_bus_processing_delay += data.total_shared_bus_processing_delay
         self.total_shared_bus_processing_queue_delay += data.total_shared_bus_processing_queue_delay

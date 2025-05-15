@@ -2,14 +2,16 @@ import re
 import sys
 from enum import Enum
 
+from Common import GPUType
+
+BUSBW_PATH = ""
+
 class ModeType(Enum):
     NONE = 0
     ASTRA_SIM = 1
     MOCKNCCL = 2
     ANALYTICAL = 3
 
-class GPUType:
-    pass
 
 class NetWorkParam:
     def __init__(self):
