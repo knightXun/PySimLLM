@@ -51,22 +51,6 @@ class AllToAll(Ring):
             if self.current_sender == self.id:
                 self.current_sender = self.logicalTopology.get_sender_node(self.current_sender, self.direction)
 
-    def release_packets(self):
-        # 这里需要实现具体的释放数据包逻辑
-        pass
-
-    def ready(self):
-        # 这里需要实现具体的准备逻辑
-        pass
-
-    def iteratable(self):
-        # 这里需要实现具体的迭代逻辑
-        pass
-
-    def insert_packet(self, packet):
-        # 这里需要实现具体的插入数据包逻辑
-        pass
-
     def run(self, event, data):
         if event == EventType.General:
             self.free_packets += 1
