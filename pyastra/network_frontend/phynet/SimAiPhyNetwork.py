@@ -1,6 +1,7 @@
-from astra_net import AstraNetworkAPI  # 假设基础类存在
+from system.AstraNetworkAPI import AstraNetworkAPI 
 from phy_sim_ai import PhyNetSim       # 假设模拟时间模块存在
-from mock_nccl_log import MockNcclLog, NcclLogLevel  # 假设日志模块存在
+from system.MockNcclLog import MockNcclLog, NcclLogLevel
+
 
 class SimAiPhyNetwork(AstraNetworkAPI):
     def __init__(self, local_rank):

@@ -3,6 +3,8 @@ import sys
 import argparse
 from typing import List, Dict
 
+from system.AstraParamParse import UserParam
+
 # 模拟原C++中的全局变量
 local_rank = 0  # 需根据实际运行环境设置，这里设为默认值
 global_sys = None
@@ -13,23 +15,6 @@ RESULT_PATH = "/etc/astra-sim/results/ncclFlowModel_"
 class GPUType:
     A100 = "A100"  # 用枚举类或简单常量模拟原枚举
 
-class UserParam:
-    """模拟原user_param结构体"""
-    def __init__(self):
-        self.thread = 1
-        self.gpus = 8
-        self.workload = "microAllReduce.txt"
-        self.comm_scale = 1
-        self.gpu_type = GPUType.A100
-        self.nvswitch_num = 1
-        self.gpus_per_server = 8
-        self.gid_index = 0
-
-    def __repr__(self):
-        return (f"UserParam(thread={self.thread}, gpus={self.gpus}, "
-                f"workload='{self.workload}', comm_scale={self.comm_scale}, "
-                f"gpu_type={self.gpu_type}, nvswitch_num={self.nvswitch_num}, "
-                f"gpus_per_server={self.gpus_per_server}, gid_index={self.gid_index})")
 
 def parse_user_params(args: List[str]) -> UserParam:
     """解析命令行参数（替代原user_param_prase函数）"""

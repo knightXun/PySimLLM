@@ -1,6 +1,9 @@
 import os
 import sys
 
+from system.AstraParamParse import UserParam
+
+
 # 假设的全局变量和映射
 receiver_pending_queue = {}
 node_num = 0
@@ -21,35 +24,6 @@ local_rank = 0
 
 workloads = []
 physical_dims = []
-
-class UserParam:
-    _instance = None
-
-    @classmethod
-    def getInstance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    def __init__(self):
-        self.thread = 1
-        self.gpus = [1]
-        self.workload = ""
-        self.comm_scale = 1
-        self.mode = None
-        self.net_work_param = type('NetWorkParam', (object,), {
-            'gpus_per_server': 0,
-            'nvswitch_num': 0,
-            'NVswitchs': [],
-            'gpu_type': ""
-        })()
-        self.res = ""
-
-    def parseArg(self, argc, argv):
-        if "-h" in argv or "--help" in argv:
-            return True
-        # 这里应该添加实际的参数解析逻辑
-        return False
 
 
 RESULT_PATH = "./results/"

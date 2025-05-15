@@ -6,122 +6,15 @@ from system.ShareBusStat import *
 from system.Sys import * 
 from system.MockNcclGroup import * 
 from system.Common import * 
-
-class MockNccl:
-    class GroupType:
-        TP = 1
-        EP = 2
-        DP = 3
-        DP_EP = 4
-
-class CollectiveBarrier:
-    Blocking = 1
-
-class SchedulingPolicy:
-    pass
-
-class DataSet:
-    def __init__(self, my_id, creation_tick, total_streams):
-        self.my_id = my_id
-        self.creation_tick = creation_tick
-        self.finish_tick = creation_tick
-        self.total_streams = total_streams
-        self.active = True
-        self.notifier = None
-        self.notify_event = None
-
-    def set_notifier(self, notifier, event):
-        self.notifier = notifier
-        self.notify_event = event
-
-class IntData:
-    def __init__(self, data):
-        self.data = data
-
-class CSVWriter:
-    def __init__(self, path):
-        self.path = path
-
-    def write_line(self, data):
-        with open(self.path, 'a', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(data.split(','))
-
-    def write_res(self, data):
-        with open(self.path, 'a') as file:
-            file.write(data + '\n')
-
-class Workload:
-    def __init__(self, model_parallel_npu_group, pipeline_model_parallelism, all_gpus, expert_parallel_npu_group, vpp, pp_commsize, GA, SIZE):
-        self.model_parallel_npu_group = model_parallel_npu_group
-        self.pipeline_model_parallelism = pipeline_model_parallelism
-        self.all_gpus = all_gpus
-        self.expert_parallel_npu_group = expert_parallel_npu_group
-        self.vpp = vpp
-        self.pp_commsize = pp_commsize
-        self.GA = GA
-        self.SIZE = SIZE
-
-    def call(self, event, mdata):
-        pass
-
-class Sys:
-    id = 0
-    FREQ = 1e9
-    @staticmethod
-    def boostedTick():
-        return time.time_ns()
-
-    @staticmethod
-    def sys_panic(message):
-        raise ValueError(message)
-
-    @staticmethod
-    def increase_finished_streams(streams):
-        pass
-
-class MockNcclLog:
-    instance = None
-
-    @staticmethod
-    def getInstance():
-        if MockNcclLog.instance is None:
-            MockNcclLog.instance = MockNcclLog()
-        return MockNcclLog.instance
-
-    def writeLog(self, level, message, *args):
-        print(message % args)
-
-class UserParam:
-    instance = None
-
-    @staticmethod
-    def getInstance():
-        if UserParam.instance is None:
-            UserParam.instance = UserParam()
-        return UserParam.instance
-
-    def __init__(self):
-        self.mode = None
-        self.net_work_param = type('NetWorkParam', (), {
-            'gpus_per_server': 0,
-            'gpu_type': None,
-            'tp_ar': 0,
-            'tp_ag': 0,
-            'tp_ata': 0,
-            'ep_ata': 0,
-            'dp_ag': 0,
-            'ep_ag': 0,
-            'dp_ar': 0,
-            'ep_ar': 0,
-            'dp_overlap_ratio': 0,
-            'ep_overlap_ratio': 0,
-            'tp_overlap_ratio': 0,
-            'pp': 0,
-            'pp_overlap_ratio': 0,
-            'visual': False
-        })()
-        self.res = ""
+from system.DataSet import DataSet
+from system.IntData import IntData
+from system.Common import SchedulingPolicy, CollectiveBarrier
+from system.Sys import Sys
+from CSVWriter import CSVWriter
+from Workload import Workload
+from system.MockNcclLog import MockNcclLog
+from system.AstraParamParse import UserParam
+from system.MockNcclGroup import MockNccl
 
 class LayerData:
     def __init__(self):
@@ -614,58 +507,510 @@ class Layer:
         pass
 
     def compute_time(
-        self,
-        comtype,
-        tp_size,
-        nranks,
-        data_size,
-        group_type,
-        all_gpus,
-        ep_size
-    ):
-        param = UserParam.getInstance()
-        comp_time = 0
-        if comtype == ComType.None:
-            return 0
+        comtype: ComType,
+        tp_size: int,
+        nranks: int,
+        data_size: int,
+        group_type: GroupType,
+        all_gpus: int,
+        ep_size: int
+    ) -> float:
+        """计算通信时间（单位：Tick）"""
+        param = UserParam.get_instance()  # 假设为单例模式
+        comp_time = 0.0
 
-        DP_comm_inside = False
-        TP_comm_inside = False
-        EP_comm_inside = False
-        n_ranks = 0
-        nnics = 0
+        if comtype == ComType.None_:
+            return comp_time
+
+        # 解析参数
         gpus_per_server = param.net_work_param.gpus_per_server
-        gpu_type = param.net_work_param.gpu_type
-        tp_ar = param.net_work_param.tp_ar
-        tp_ag = param.net_work_param.tp_ag
-        tp_ata = param.net_work_param.tp_ata
-        ep_ata = param.net_work_param.ep_ata
-        dp_ag = param.net_work_param.dp_ag
-        ep_ag = param.net_work_param.ep_ag
-        dp_ar = param.net_work_param.dp_ar
-        ep_ar = param.net_work_param.ep_ar
+        gpu_type = param.net_work_param.gpu_type  # 若未使用可忽略
+        tp_ar = param.net_work_param.tp_ar       # TP AllReduce带宽 (GB/s)
+        tp_ag = param.net_work_param.tp_ag       # TP AllGather带宽 (GB/s)
+        tp_ata = param.net_work_param.tp_ata     # TP AlltoAll带宽 (GB/s)
+        ep_ata = param.net_work_param.ep_ata     # EP AlltoAll带宽 (GB/s)
+        dp_ag = param.net_work_param.dp_ag       # DP AllGather带宽 (GB/s)
+        ep_ag = param.net_work_param.ep_ag       # EP AllGather带宽 (GB/s)
+        dp_ar = param.net_work_param.dp_ar       # DP AllReduce带宽 (GB/s)
+        ep_ar = param.net_work_param.ep_ar       # EP AllReduce带宽 (GB/s)
+        
+        # 初始化标志位
+        TP_comm_inside = False
+        DP_comm_inside = False
+        n_ranks = 0
 
-        if group_type == MockNccl.GroupType.TP or group_type == MockNccl.GroupType.EP:
+        if group_type in (GroupType.TP, GroupType.EP):
             n_ranks = tp_size
             if n_ranks <= gpus_per_server:
                 TP_comm_inside = True
-        elif group_type in [MockNccl.GroupType.DP, MockNccl.GroupType.EP, MockNccl.GroupType.DP_EP]:
+        elif group_type in (GroupType.DP, GroupType.DP_EP, GroupType.EP):
             n_ranks = nranks
-            nnics = gpus_per_server // tp_size
+            nnics = gpus_per_server // tp_size  # 注意整数除法
             if all_gpus == gpus_per_server and tp_size <= gpus_per_server:
                 DP_comm_inside = True
 
+        # 核心计算逻辑
         if TP_comm_inside or DP_comm_inside:
             if comtype == ComType.All_Reduce:
-                comp_time = data_size * 1e9 / tp_ar * 2 * (nranks - 1) / (nranks / 1.0)
-            elif group_type == MockNccl.GroupType.TP and comtype in [ComType.All_Gather, ComType.Reduce_Scatter]:
-                comp_time = data_size * 1e9 / tp_ag * (nranks - 1) / (nranks / 1.0)
-            elif group_type == MockNccl.GroupType.TP and comtype == ComType.All_to_All:
-                comp_time = data_size * 1e9 / tp_ata * (nranks - 1) / (nranks / 1.0)
-            elif group_type == MockNccl.GroupType.EP and comtype == ComType.All_to_All:
-                comp_time = data_size * 1e9 / ep_ata * (nranks - 1) / (nranks / 1.0)
-            else:
-                comp_time = 0
-        elif not TP_comm_inside and group_type == MockNccl.GroupType.TP:
+                comp_time = (data_size * 2 * (nranks - 1) / nranks) / tp_ar * 1e9
+            elif group_type == GroupType.TP and comtype in (ComType.All_Gather, ComType.Reduce_Scatter):
+                comp_time = (data_size * (nranks - 1) / nranks) / tp_ag * 1e9
+            elif group_type == GroupType.TP and comtype == ComType.All_to_All:
+                comp_time = (data_size * (nranks - 1) / nranks) / tp_ata * 1e9
+            elif group_type == GroupType.EP and comtype == ComType.All_to_All:
+                comp_time = (data_size * (nranks - 1) / nranks) / ep_ata * 1e9
+        elif group_type == GroupType.TP:
             if comtype == ComType.All_Reduce:
-                comp_time = data_size * 1e9 / tp_ar * 2 * (nranks - 1) / (nranks / 1.0)
-            elif comtype in [ComType.All_Gather, ComType
+                comp_time = (data_size * 2 * (nranks - 1) / nranks) / tp_ar * 1e9
+            elif comtype in (ComType.All_Gather, ComType.Reduce_Scatter):
+                comp_time = (data_size * (nranks - 1) / nranks) / tp_ag * 1e9
+            elif comtype == ComType.All_to_All:
+                comp_time = (data_size * (nranks - 1) / nranks) / tp_ata * 1e9
+        elif group_type == GroupType.DP:
+            if comtype == ComType.All_Reduce:
+                comp_time = (data_size * 2 * (nranks - 1) / nranks) / dp_ar * 1e9
+            elif comtype in (ComType.All_Gather, ComType.Reduce_Scatter, ComType.All_to_All):
+                comp_time = (data_size * (nranks - 1) / nranks) / dp_ag * 1e9
+        elif group_type == GroupType.DP_EP:
+            if comtype == ComType.All_Reduce:
+                comp_time = (data_size * 2 * (nranks - 1) / nranks) / ep_ar * 1e9
+            elif comtype in (ComType.All_Gather, ComType.Reduce_Scatter, ComType.All_to_All):
+                comp_time = (data_size * (nranks - 1) / nranks) / ep_ag * 1e9
+
+        return comp_time
+
+
+    def compute_busbw(
+        comtype: ComType,
+        nranks: int,
+        data_size: int,
+        total_comm: float
+    ) -> Tuple[float, float]:
+        """计算算法带宽和总线带宽"""
+        FREQ = 1e6  # 假设频率为1MHz（需根据实际情况调整）
+        GBps = 1024**3  # 1GB = 1024^3字节
+        
+        algbw = (data_size / (total_comm / FREQ)) * 1000000 * GBps
+        busbw = 0.0
+        
+        if comtype == ComType.All_Reduce:
+            busbw = algbw * 2 * (nranks - 1) / nranks
+        elif comtype in (ComType.All_Gather, ComType.Reduce_Scatter, ComType.All_to_All):
+            busbw = algbw * (nranks - 1) / nranks
+        
+        return (algbw, busbw)
+
+    def issue_forward_pass_comm(
+        self,
+        pref_scheduling: str,
+        barrier: CollectiveBarrier
+    ):
+        """发起前向通信过程"""
+        logger = MockNcclLog.getInstance()
+        collective_counter = self.collective_counter
+        fwd_pass_comm_type = self.fwd_pass_comm_type
+        generator = self.generator
+        workload = self.workload
+        fwd_pass_datasets = self.fwd_pass_datasets
+        layer_num = self.layer_num
+        id = self.id
+        PHY_MTP = self.PHY_MTP  # 假设为类属性
+        
+        # 解析条件编译
+        if self.ANALYTI:
+            self.fwd_barrier = barrier
+            if generator.id == 0:
+                logger.write_log(
+                    NcclLogLevel.DEBUG,
+                    f"forward pass for layer {id} is analytical",
+                )
+                logger.write_log(
+                    NcclLogLevel.DEBUG,
+                    f"forward pass for layer-id {layer_num} is analytical",
+                )
+            if barrier == CollectiveBarrier.Blocking:
+                workload.call(EventType.General, None)
+            return
+        
+        fp: Optional[DataSet] = None
+        self.fwd_barrier = barrier
+        self.collective_counter += 1
+        
+        # 处理不同通信类型
+        if fwd_pass_comm_type == ComType.All_Reduce:
+            if PHY_MTP:
+                fp = generator.generate_all_reduce(
+                    self.fwd_pass_comm_size,
+                    self.fwd_pass_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Fwd_Comm_Finished,
+                    self,
+                )
+            else:
+                fp = generator.generate_all_reduce(
+                    self.fwd_pass_comm_size,
+                    self.fwd_pass_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                )
+        elif fwd_pass_comm_type == ComType.All_to_All:
+            if PHY_MTP:
+                fp = generator.generate_all_to_all(
+                    self.fwd_pass_comm_size,
+                    self.fwd_pass_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Fwd_Comm_Finished,
+                    self,
+                )
+            else:
+                fp = generator.generate_all_to_all(
+                    self.fwd_pass_comm_size,
+                    self.fwd_pass_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                )
+        elif fwd_pass_comm_type == ComType.All_Gather:
+            if PHY_MTP:
+                fp = generator.generate_all_gather(
+                    self.fwd_pass_comm_size,
+                    self.fwd_pass_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Fwd_Comm_Finished,
+                    self,
+                )
+            else:
+                fp = generator.generate_all_gather(
+                    self.fwd_pass_comm_size,
+                    self.fwd_pass_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                )
+        elif fwd_pass_comm_type == ComType.Reduce_Scatter:
+            if PHY_MTP:
+                fp = generator.generate_reduce_scatter(
+                    self.fwd_pass_comm_size,
+                    self.fwd_pass_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Fwd_Comm_Finished,
+                    self,
+                )
+            else:
+                fp = generator.generate_reduce_scatter(
+                    self.fwd_pass_comm_size,
+                    self.fwd_pass_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                )
+        elif fwd_pass_comm_type == ComType.NONE:
+            self.collective_counter -= 1
+            if generator.id == 0:
+                print(f"info: no forward pass collective for layer: {id}")
+            if barrier == CollectiveBarrier.Blocking:
+                workload.call(EventType.General, None)
+            return
+        else:
+            raise RuntimeError("Unknown collective operation!")
+        
+        # 处理数据集激活状态
+        if not fp.active:
+            if generator.id == 0:
+                print(f"info: all dims disabled, no forward pass collective for layer: {id}")
+            self.collective_counter -= 1
+            del fp  # Python自动垃圾回收，无需显式delete
+            if barrier == CollectiveBarrier.Blocking:
+                workload.call(EventType.General, None)
+            return
+        
+        if generator.id == 0:
+            print(
+                f"info: {fwd_pass_comm_type.name.lower()}-{comtype_to_str(fwd_pass_comm_type)} forward pass collective issued for layer: {id}",
+            )
+            self.print_involved_dimensions(self.fwd_pass_comm_involved_dimensions)
+        
+        # 非PHY_MTP模式处理
+        if not PHY_MTP:
+            self.fwd_pass_datasets[fp.my_id] = fp
+            fp.set_notifier(self, EventType.Fwd_Comm_Finished)
+        
+        logger.write_log(NcclLogLevel.DEBUG, "Fwd_Comm_Finished set_notifier success")
+
+
+    def issue_input_grad_comm(
+        self,
+        pref_scheduling: str,
+        barrier: CollectiveBarrier
+    ):
+        """发起输入梯度通信过程"""
+        logger =  MockNcclLog.getInstance()   
+        generator = self.generator    # 生成器对象
+        workload = self.workload      # 工作负载对象
+        ANALYTI = self.ANALYTI        # 分析模式标志
+        PHY_MTP = self.PHY_MTP        # PHY_MTP模式标志
+        collective_counter = self.collective_counter
+        input_grad_comm_type = self.input_grad_comm_type
+        layer_num = self.layer_num
+        id = self.id
+        input_grad_datasets = self.input_grad_datasets
+
+        # 分析模式处理
+        if ANALYTI:
+            self.ig_barrier = barrier
+            if generator.id == 0:
+                logger.write_log(
+                    NcclLogLevel.DEBUG,
+                    f"input grad collective for layer {id} is analytical"
+                )
+                logger.write_log(
+                    NcclLogLevel.DEBUG,
+                    f"input grad collective for layer-id {layer_num} is analytical"
+                )
+            if barrier == CollectiveBarrier.Blocking:
+                workload.call(EventType.General, None)
+            return
+
+        ig: Optional[DataSet] = None
+        self.ig_barrier = barrier
+        self.collective_counter += 1
+
+        # 处理不同通信类型
+        if input_grad_comm_type == ComType.All_Reduce:
+            if PHY_MTP:
+                ig = generator.generate_all_reduce(
+                    self.input_grad_comm_size,
+                    self.input_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Input_Grad_Comm_Finished,
+                    self
+                )
+            else:
+                ig = generator.generate_all_reduce(
+                    self.input_grad_comm_size,
+                    self.input_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num
+                )
+        elif input_grad_comm_type == ComType.All_to_All:
+            if PHY_MTP:
+                ig = generator.generate_all_to_all(
+                    self.input_grad_comm_size,
+                    self.input_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Input_Grad_Comm_Finished,
+                    self
+                )
+            else:
+                ig = generator.generate_all_to_all(
+                    self.input_grad_comm_size,
+                    self.input_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num
+                )
+        elif input_grad_comm_type == ComType.All_Gather:
+            if PHY_MTP:
+                ig = generator.generate_all_gather(
+                    self.input_grad_comm_size,
+                    self.input_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Input_Grad_Comm_Finished,
+                    self
+                )
+            else:
+                ig = generator.generate_all_gather(
+                    self.input_grad_comm_size,
+                    self.input_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num
+                )
+        elif input_grad_comm_type == ComType.Reduce_Scatter:
+            if PHY_MTP:
+                ig = generator.generate_reduce_scatter(
+                    self.input_grad_comm_size,
+                    self.input_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Input_Grad_Comm_Finished,
+                    self
+                )
+            else:
+                ig = generator.generate_reduce_scatter(
+                    self.input_grad_comm_size,
+                    self.input_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num
+                )
+        elif input_grad_comm_type == ComType.NONE:
+            self.collective_counter -= 1
+            if generator.id == 0:
+                print(f"info: no input grad collective for layer: {id}")
+            if barrier == CollectiveBarrier.Blocking:
+                workload.call(EventType.General, None)
+            return
+        else:
+            raise RuntimeError(f"Unknown collective operation for layer {id}")
+
+        # 处理数据集激活状态
+        if not ig.active:
+            if generator.id == 0:
+                print(f"info: all dims disabled, no input grad collective for layer: {id}")
+            self.collective_counter -= 1
+            del ig  # 自动垃圾回收
+            if barrier == CollectiveBarrier.Blocking:
+                workload.call(EventType.General, None)
+            return
+
+        if generator.id == 0:
+            print(
+                f"info: {input_grad_comm_type.name.lower()}-{comtype_to_str(input_grad_comm_type)} input grad collective issued for layer: {id}",
+            )
+            self.print_involved_dimensions(self.input_grad_comm_involved_dimensions)
+
+        # 非PHY_MTP模式处理
+        if not PHY_MTP:
+            self.input_grad_datasets[ig.my_id] = ig
+            ig.set_notifier(self, EventType.Input_Grad_Comm_Finished)
+
+    def issue_weight_grad_comm(
+        self,
+        pref_scheduling: str,
+        barrier: CollectiveBarrier
+    ):
+        """发起权重梯度通信过程"""
+        logger =  MockNcclLog.getInstance()
+        generator = self.generator
+        workload = self.workload
+        ANALYTI = self.ANALYTI
+        PHY_MTP = self.PHY_MTP
+        collective_counter = self.collective_counter
+        weight_grad_comm_type = self.weight_grad_comm_type
+        layer_num = self.layer_num
+        id = self.id
+        weight_grad_datasets = self.weight_grad_datasets
+
+        # 分析模式处理
+        if ANALYTI:
+            self.wg_barrier = barrier
+            if generator.id == 0:
+                logger.write_log(
+                    NcclLogLevel.DEBUG,
+                    f"weight grad collective for layer {id} is analytical"
+                )
+                logger.write_log(
+                    NcclLogLevel.DEBUG,
+                    f"weight grad collective for layer-id {layer_num} is analytical"
+                )
+            if barrier == CollectiveBarrier.Blocking:
+                workload.call(EventType.General, None)
+            return
+
+        wg: Optional[DataSet] = None
+        self.wg_barrier = barrier
+        self.collective_counter += 1
+
+        # 处理不同通信类型
+        if weight_grad_comm_type == ComType.All_Reduce:
+            if PHY_MTP:
+                wg = generator.generate_all_reduce(
+                    self.weight_grad_comm_size,
+                    self.weight_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Wight_Grad_Comm_Finished,
+                    self
+                )
+            else:
+                wg = generator.generate_all_reduce(
+                    self.weight_grad_comm_size,
+                    self.weight_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num
+                )
+        elif weight_grad_comm_type == ComType.All_to_All:
+            if PHY_MTP:
+                wg = generator.generate_all_to_all(
+                    self.weight_grad_comm_size,
+                    self.weight_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Wight_Grad_Comm_Finished,
+                    self
+                )
+            else:
+                wg = generator.generate_all_to_all(
+                    self.weight_grad_comm_size,
+                    self.weight_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num
+                )
+        elif weight_grad_comm_type == ComType.All_Gather:
+            if generator.id == 0:
+                print(f"Layer issue wg all gather at tick: {Sys.boostedTick()}")
+            if PHY_MTP:
+                wg = generator.generate_all_gather(
+                    self.weight_grad_comm_size,
+                    self.weight_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Wight_Grad_Comm_Finished,
+                    self
+                )
+            else:
+                wg = generator.generate_all_gather(
+                    self.weight_grad_comm_size,
+                    self.weight_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num
+                )
+        elif weight_grad_comm_type == ComType.Reduce_Scatter:
+            if PHY_MTP:
+                wg = generator.generate_reduce_scatter(
+                    self.weight_grad_comm_size,
+                    self.weight_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num,
+                    EventType.Wight_Grad_Comm_Finished,
+                    self
+                )
+            else:
+                wg = generator.generate_reduce_scatter(
+                    self.weight_grad_comm_size,
+                    self.weight_grad_comm_involved_dimensions,
+                    pref_scheduling,
+                    layer_num
+                )
+        elif weight_grad_comm_type == ComType.None:
+            self.collective_counter -= 1
+            if generator.id == 0:
+                print(f"info: no weight grad collective for layer: {id}")
+            if barrier == CollectiveBarrier.Blocking:
+                workload.call(EventType.General, None)
+            return
+        else:
+            raise RuntimeError(f"Unknown collective operation for layer {id}")
+
+        # 处理数据集激活状态
+        if not wg.active:
+            if generator.id == 0:
+                print(f"info: all dims disabled, no weight grad collective for layer: {id}")
+            self.collective_counter -= 1
+            del wg
+            if barrier == CollectiveBarrier.Blocking:
+                workload.call(EventType.General, None)
+            return
+
+        if generator.id == 0:
+            print(
+                f"info: {weight_grad_comm_type.name.lower()}-{comtype_to_str(weight_grad_comm_type)} weight grad collective issued for layer: {id} with size: {self.weight_grad_comm_size}",
+            )
+            self.print_involved_dimensions(self.weight_grad_comm_involved_dimensions)
+
+        # 非PHY_MTP模式处理
+        if not PHY_MTP:
+            self.weight_grad_datasets[wg.my_id] = wg
+            wg.set_notifier(self, EventType.Wight_Grad_Comm_Finished)
