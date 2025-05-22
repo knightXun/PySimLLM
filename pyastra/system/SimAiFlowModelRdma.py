@@ -9,6 +9,7 @@ import logging
 import threading
 import fcntl
 
+import numpy as np
 from mpi4py import MPIc
 
 import pyverbs
@@ -57,7 +58,7 @@ class FlowPhyRdma:
         self.ibv_send_wr_map: Dict[Tuple[int, int], SendWR] = {} 
         self.ibv_recv_wr_id_map: Dict[int, int] = {}  
         self.ibv_send_wr_id_map: Dict[int, int] = {}
-        self.logger = MockNcclLog()
+        self.logger = MockNcclLog.get_instance()
 
     def __del__(self):
         self.ibv_fini()
@@ -168,7 +169,7 @@ class FlowPhyRdma:
         flags_init = IBV_QP_STATE | IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_ACCESS_FLAGS
         rc = ibv_modify_qp(qp_ctx.qp, attr, flags_init)
         if rc != 0:
-            NcclLog.writeLog(NcclLogLevel.ERROR, "failed to modify QP state to INIT")
+            NcclLog.write_log(NcclLogLevel.ERROR, "failed to modify QP state to INIT")
             return rc
 
         # modify the QP to RTR 
@@ -197,17 +198,17 @@ class FlowPhyRdma:
             attr.ah_attr.dlid, attr.ah_attr.grh.sgid_index,
             attr.dest_qp_num, attr.rq_psn, *tuple(remote_gid)
         )
-        NcclLog.writeLog(NcclLogLevel.DEBUG, log_msg)
+        NcclLog.write_log(NcclLogLevel.DEBUG, log_msg)
         
         flags_rtr = IBV_QP_STATE | IBV_QP_AV | IBV_QP_PATH_MTU | IBV_QP_DEST_QPN | \
                     IBV_QP_RQ_PSN | IBV_QP_MAX_DEST_RD_ATOMIC | IBV_QP_MIN_RNR_TIMER
 
         rc = ibv_modify_qp(qp_ctx.qp, attr, flags_rtr)
         if rc != 0:
-            NcclLog.writeLog(NcclLogLevel.ERROR, "failed to modify QP state to RTR")
+            NcclLog.write_log(NcclLogLevel.ERROR, "failed to modify QP state to RTR")
             return rc
         else:
-            NcclLog.writeLog(NcclLogLevel.DEBUG, "success to modify QP state to RTR")
+            NcclLog.write_log(NcclLogLevel.DEBUG, "success to modify QP state to RTR")
         
         # Step 3: modify the QP to RTS
         attr = IbvQpAttr()
@@ -221,9 +222,9 @@ class FlowPhyRdma:
                     IBV_QP_RNR_RETRY | IBV_QP_SQ_PSN | IBV_QP_MAX_QP_RD_ATOMIC
         rc = ibv_modify_qp(qp_ctx.qp, attr, flags_rts)
         if rc != 0:
-            NcclLog.writeLog(NcclLogLevel.ERROR, "failed to modify QP state to RTS")
+            NcclLog.write_log(NcclLogLevel.ERROR, "failed to modify QP state to RTS")
         else:
-            NcclLog.writeLog(NcclLogLevel.DEBUG, "success to modify QP state to RTS")
+            NcclLog.write_log(NcclLogLevel.DEBUG, "success to modify QP state to RTS")
         
         return rc
 
@@ -860,9 +861,9 @@ class FlowPhyRdma:
             try:
                 cqes = cq.poll()
                 for cqe in cqes:
-                    self.logger.writeLog(logging.DEBUG, f"Received CQE: wr_id={cqes[0].wr_id}, status={cqes[0].status}")
+                    self.logger.write_log(logging.DEBUG, f"Received CQE: wr_id={cqes[0].wr_id}, status={cqes[0].status}")
             except Exception as e:
-                self.logger.writeLog(logging.WARNING, f"CQ poll error: {str(e)}")
+                self.logger.write_log(logging.WARNING, f"CQ poll error: {str(e)}")
 
 
 flow_rdma = FlowPhyRdma()

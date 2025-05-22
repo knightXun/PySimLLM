@@ -12,8 +12,7 @@ class LocalRingNodeA2AGlobalDBT(ComplexLogicalTopology):
         self.node_dimension = RingTopology(RingTopology.Dimension.Horizontal, id, node_dim, (id % (local_dim * node_dim)) // local_dim, local_dim)
 
     def __del__(self):
-        # Python 有自动垃圾回收机制，不需要手动删除对象
-        pass
+        return
 
     def get_basic_topology_at_dimension(self, dimension, type):
         if dimension == 0:

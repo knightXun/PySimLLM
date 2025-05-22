@@ -44,7 +44,7 @@ class StreamBaseline(BaseStream):
         
         self.my_current_phase.algorithm.run(EventType.StreamInit, None)
         
-        nccl_log = MockNcclLog()
+        nccl_log = MockNcclLog.get_instance()
         nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "StreamBaseline::algorithm->run finished")
         
         if self.steps_finished == 1:

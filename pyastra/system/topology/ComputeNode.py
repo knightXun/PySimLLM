@@ -1,2 +1,1 @@
-class ComputeNode:
-    pass
+class ComputeNode: pass

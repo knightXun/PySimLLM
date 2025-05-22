@@ -22,6 +22,7 @@ class AnaSim:
             calltask = AnaSim.call_list.get()
             while calltask.time != AnaSim.tick:
                 AnaSim.tick += 1
+
             calltask.fun_ptr(calltask.fun_arg)
 
     @staticmethod
@@ -32,8 +33,8 @@ class AnaSim:
 
     @staticmethod
     def Stop():
-        pass
+        return
 
     @staticmethod
     def Destroy():
-        pass
+        return

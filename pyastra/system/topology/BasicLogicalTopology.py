@@ -5,8 +5,8 @@ from LogicalTopology import LogicalTopology
 
 class BasicLogicalTopology(LogicalTopology):
     class BasicTopology(Enum):
-        Ring = 1
-        BinaryTree = 2
+        Ring = 0
+        BinaryTree = 1
 
     def __init__(self, basic_topology):
         self.basic_topology = basic_topology

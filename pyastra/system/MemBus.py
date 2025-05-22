@@ -34,13 +34,13 @@ class MemBus:
             self.NPU_side.request_read(bytes, processed, send_back, callable_obj)
         else:
             if transmition == self.Transmition.Fast:
-                NcclLog = MockNcclLog.getInstance()
+                NcclLog = MockNcclLog.get_instance()
                 self.generator.register_event(callable_obj, EventType.NPU_to_MA, SharedBusStat(BusType.Shared, 0, 10, 0, 0), 10)
             else:
                 self.generator.register_event(callable_obj, EventType.NPU_to_MA, SharedBusStat(BusType.Shared, 0, self.communication_delay, 0, 0), self.communication_delay)
 
     def send_from_MA_to_NPU(self, transmition, bytes, processed, send_back, callable_obj):
-        NcclLog = MockNcclLog.getInstance()
+        NcclLog = MockNcclLog.get_instance()
         if self.model_shared_bus and transmition == self.Transmition.Usual:
             self.MA_side.request_read(bytes, processed, send_back, callable_obj)
         else:

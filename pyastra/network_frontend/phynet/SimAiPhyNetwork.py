@@ -1,7 +1,8 @@
-from system.AstraNetworkAPI import AstraNetworkAPI 
-from phy_sim_ai import PhyNetSim       # 假设模拟时间模块存在
+from system.AstraNetworkAPI import AstraNetworkAPI, timespec_t
+from PhySimAi import PhyNetSim
 from system.MockNcclLog import MockNcclLog, NcclLogLevel
-
+import SimAiEntry
+from system.BootStrapnet import local_rank
 
 class SimAiPhyNetwork(AstraNetworkAPI):
     def __init__(self, local_rank):
@@ -21,9 +22,6 @@ class SimAiPhyNetwork(AstraNetworkAPI):
         return 0
 
     def sim_get_time(self):
-        class timespec_t:
-            def __init__(self, time_val):
-                self.time_val = time_val
         return timespec_t(PhyNetSim.Now())
 
     def sim_schedule(self, delta, fun_ptr, fun_arg):
@@ -35,16 +33,8 @@ class SimAiPhyNetwork(AstraNetworkAPI):
     def sim_send(self, buffer, count, dtype, dst, tag, request, msg_handler, fun_arg):
         nccl_log = MockNcclLog.get_instance()
         dst += self.npu_offset
-        self.send_flow(self.rank, dst, count, msg_handler, fun_arg, tag, request)
+        SimAiEntry.send_flow(self.rank, dst, count, msg_handler, fun_arg, tag, request)
         return 0
 
     def sim_recv(self, buffer, count, dtype, src, tag, request, msg_handler, fun_arg):
         return 0
-
-# 假设存在的全局变量
-local_rank = 0
-
-# 辅助函数（需要根据实际实现补充）
-def send_flow(rank, dst, count, msg_handler, fun_arg, tag, request):
-    """模拟网络流发送的逻辑实现"""
-    pass

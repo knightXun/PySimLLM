@@ -1,6 +1,8 @@
 import os
 import csv
 
+from system import Common
+
 class CSVWriter:
     def __init__(self, path, name):
         self.path = path
@@ -57,7 +59,7 @@ class CSVWriter:
                         try:
                             item = next(it)
                             if i == 0:
-                                row.append(item[0] / FREQ)
+                                row.append(item[0] / Common.FREQ)
                                 compare = item[0]
                             else:
                                 assert compare == item[0]
@@ -89,7 +91,3 @@ class CSVWriter:
                 writer.writerows(lines)
         except Exception as e:
             print(f"写入单元格时出错: {e}")
-
-
-# 这里需要定义 FREQ，在原 C++ 代码中它应该是一个全局常量
-FREQ = 1.0

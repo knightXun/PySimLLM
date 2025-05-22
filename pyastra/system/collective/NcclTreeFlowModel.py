@@ -18,7 +18,7 @@ from StreamStat import StreamStat
 from Common import ComType, EventType, StreamState
 
 from system.topology.RingTopology import RingTopology
-from AstraNetworkAPI import sim_request
+from AstraNetworkAPI import sim_request, req_type_e
 from system.MockNcclChannel import *
 from system.SendPacketEventHandlerData import SendPacketEventHandlerData
 from PacketBundle import PacketBundle
@@ -118,7 +118,7 @@ class NcclTreeFlowModel(Algorithm):
     def run(self, event, data):
         """处理各种事件类型的主函数"""
         ehd = data  # 假设已进行类型转换
-        NcclLog = MockNcclLog.getInstance()
+        NcclLog = MockNcclLog.get_instance()
 
         if event == EventType.General:
             # 处理通用事件
@@ -341,7 +341,7 @@ class NcclTreeFlowModel(Algorithm):
 
     def recv_ready(self, channel_id: int, flow_id: int) -> bool:
         # 获取流模型
-        logger = MockNcclLog.getInstance()
+        logger = MockNcclLog.get_instance()
 
         flow_key = (channel_id, flow_id)
         if flow_key not in self._flow_models:
@@ -383,7 +383,7 @@ class NcclTreeFlowModel(Algorithm):
                 src_rank=0,
                 data=Sys.dummy_data,
                 data_size=flow_model.flow_size,
-                data_type=UINT8,
+                data_type=req_type_e.UINT8,
                 dest_rank=recv_prev,
                 channel_id=channel_id,
                 request=rcv_req,
@@ -395,7 +395,7 @@ class NcclTreeFlowModel(Algorithm):
 
     def release_packets(self, channel_id: int, flow_id: int, message_size: int):
         """释放数据包到MA或NPU"""
-        logger = MockNcclLog.getInstance()
+        logger = MockNcclLog.get_instance()
 
         logger.write_log(
             NcclLogLevel.DEBUG,
@@ -421,7 +421,7 @@ class NcclTreeFlowModel(Algorithm):
             packet_bundle.send_to_NPU()
 
     def process_stream_count(self, channel_id: int):
-        logger = MockNcclLog.getInstance()
+        logger = MockNcclLog.get_instance()
 
         logger.write_log(
             NcclLogLevel.DEBUG,
@@ -455,7 +455,7 @@ class NcclTreeFlowModel(Algorithm):
 
     def iteratable(self, channel_id: int) -> bool:
         """检查是否所有通道和数据包都已处理完成"""
-        logger = MockNcclLog.getInstance()
+        logger = MockNcclLog.get_instance()
         all_channel_finished = True
         all_packets_freed = True
         
@@ -480,7 +480,7 @@ class NcclTreeFlowModel(Algorithm):
 
     def insert_packets(self, channel_id: int, flow_id: int):
         """插入数据包到队列并发送"""
-        logger = MockNcclLog.getInstance()
+        logger = MockNcclLog.get_instance()
         
         # 检查参数有效性
         assert channel_id < self.m_channels, f"Invalid channel_id: {channel_id}"
@@ -576,7 +576,7 @@ class NcclTreeFlowModel(Algorithm):
 
     def ready(self, channel_id: int, flow_id: int) -> bool:
         """处理流准备就绪事件"""
-        logger = MockNcclLog.getInstance()
+        logger = MockNcclLog.get_instance()
         
         # 检查流状态并更新
         if self.stream.state in (StreamState.Created, StreamState.Ready):
@@ -639,7 +639,7 @@ class NcclTreeFlowModel(Algorithm):
                     src_rank=0,
                     data=Sys.dummy_data,
                     data_size=rcv_req.req_count,
-                    data_type=UINT8,
+                    data_type=req_type_e.UINT8,
                     dest_rank=recv_prev,
                     tag=rcv_req.tag,
                     request=rcv_req,
@@ -652,7 +652,7 @@ class NcclTreeFlowModel(Algorithm):
             src_rank=self.id,
             dst_rank=packet.preferred_dest,
             tag=channel_id,
-            req_type=UINT8,
+            req_type=req_type_e.UINT8,
             vnet=self.stream.current_queue_id,
             layer_num=self.layer_num,
             req_count=packet.msg_size
@@ -690,7 +690,7 @@ class NcclTreeFlowModel(Algorithm):
             src_rank=0,
             data=Sys.dummy_data,
             data_size=snd_req.req_count,
-            data_type=UINT8,
+            data_type=req_type_e.UINT8,
             dest_rank=packet.preferred_dest,
             tag=snd_req.flow_tag.tag_id,
             request=snd_req,
@@ -702,7 +702,7 @@ class NcclTreeFlowModel(Algorithm):
 
     def exit(self):
         """处理流退出事件"""
-        logger = MockNcclLog.getInstance()
+        logger = MockNcclLog.get_instance()
         
         if self.PHY_MTP:
             # 记录结束时间和通信延迟
@@ -787,7 +787,7 @@ class NcclTreeFlowModel(Algorithm):
                     src_rank=0,
                     data=Sys.dummy_data,
                     data_size=rcv_req.req_count,
-                    data_type=UINT8,
+                    data_type=req_type_e.UINT8,
                     dest_rank=recv_prev,
                     tag=rcv_req.tag,
                     request=rcv_req,
@@ -799,7 +799,7 @@ class NcclTreeFlowModel(Algorithm):
             src_rank=self.id,
             dst_rank=flow.dest,
             tag=channel_id,
-            req_type=UINT8,
+            req_type=req_type_e.UINT8,
             vnet=self.stream.current_queue_id,
             layer_num=self.layer_num,
             req_count=flow.flow_size
@@ -834,7 +834,7 @@ class NcclTreeFlowModel(Algorithm):
             src_rank=0,
             data=Sys.dummy_data,
             data_size=snd_req.req_count,
-            data_type=UINT8,
+            data_type=req_type_e.UINT8,
             dest_rank=flow.dest,
             tag=snd_req.tag,
             request=snd_req,
@@ -842,10 +842,10 @@ class NcclTreeFlowModel(Algorithm):
             event_data=send_ehd
         )
 
-        return true
+        return True
 
     def waiting_to_exit(self):
-        logger = MockNcclLog.getInstance()
+        logger = MockNcclLog.get_instance()
         logger.write_log(NcclLogLevel.DEBUG, "NcclTreeFlowModel::waiting_to_exit begin ")
         
         while not self.judge_exit_flag:

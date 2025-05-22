@@ -1,26 +1,27 @@
 import os
 import sys
 
-from system.AstraParamParse import UserParam
+from system.AstraParamParse import UserParam, ModeType
+from system.AstraNetworkAPI import AstraNetworkAPI
+from system.AstraNetworkAPI import sim_comm, sim_request, timespec_t
+from system.AstraMemoryAPI import AstraMemoryAPI
+from system.AstraParamParse import  UserParam
 
+from ns3.AstraSimNetwork import receiver_pending_queue
+from ns3.common import node_num, switch_num, link_num, trace_num, nvswitch_num, gpus_per_server
+from ns3.common import gpu_type
+from ns3.common import NVswitchs
 
-# 假设的全局变量和映射
-receiver_pending_queue = {}
-node_num = 0
-switch_num = 0
-link_num = 0
-trace_num = 0
-nvswitch_num = 0
-gpus_per_server = 0
-gpu_type = ""
-NVswitchs = []
+from ns3.entry import expeRecvHash
+from ns3.entry import recvHash, sentHash, nodeHash, local_rank
+
+from AstraSim import AnaSim
+from system.Sys import Sys
+
 all_gpus = []
 ngpus_per_node = 0
-expeRecvHash = {}
-recvHash = {}
-sentHash = {}
+
 nodeHash = {}
-local_rank = 0
 
 workloads = []
 physical_dims = []
@@ -35,45 +36,14 @@ class AnalyticalNetWork:
         pass
 
 
-class Sys:
-    def __init__(self, analytical_network, _, __, ___, ____, physical_dim, queues_per_dim, _____, workload_path,
-                 comm_scale, ______, _______, ________, _________, result_path, __________, ___________, ____________,
-                 gpu_type, gpus, NVswitchs, gpus_per_server):
-        self.analytical_network = analytical_network
-        self.workload = type('Workload', (object,), {'fire': lambda: None})()
-        self.nvswitch_id = None
-        self.num_gpus = None
-        self.net_work_param = type('NetWorkParam', (object,), {
-            'gpus_per_server': gpus_per_server,
-            'NVswitchs': NVswitchs,
-            'gpu_type': gpu_type
-        })()
-        self.gpus = gpus
-        self.comm_scale = comm_scale
-        self.result_path = result_path
-        self.workload_path = workload_path
-
-
-class AnaSim:
-    @staticmethod
-    def Run():
-        pass
-
-    @staticmethod
-    def Stop():
-        pass
-
-    @staticmethod
-    def Destroy():
-        pass
-
-
 def main():
     param = UserParam.getInstance()
     if param.parseArg(len(sys.argv), sys.argv):
         print("-h,       --help                Help message")
         return -1
-    param.mode = "ANALYTICAL"
+    
+    param.mode = ModeType.ANALYTICAL
+
     physical_dims = [param.gpus]
     # AnaInit(argc, argv);
     using_num_gpus = 0
@@ -87,6 +57,7 @@ def main():
     node2nvswitch = {}
     for i in range(all_gpu_num):
         node2nvswitch[i] = all_gpu_num + i // param.net_work_param.gpus_per_server
+        
     for i in range(all_gpu_num, all_gpu_num + param.net_work_param.nvswitch_num):
         node2nvswitch[i] = i
         param.net_work_param.NVswitchs.append(i)

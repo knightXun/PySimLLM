@@ -1,5 +1,5 @@
-# 有些部分AI没有完全翻译，后面要加上去
 import ns3
+import ns
 import sys
 import time
 from dataclasses import dataclass
@@ -97,12 +97,12 @@ class Interface:
     delay: int = 0
     bw: int = 0
 
-nbr2if = defaultdict(lambda: defaultdict(Interface))
-nextHop = defaultdict(lambda: defaultdict(list))
-pairDelay = defaultdict(lambda: defaultdict(int))
-pairTxDelay = defaultdict(lambda: defaultdict(int))
-pairBw = defaultdict(lambda: defaultdict(int))
-pairRtt = defaultdict(lambda: defaultdict(int))
+nbr2if = {}
+nextHop = {}
+pairDelay = {}
+pairTxDelay = {}
+pairBw = {}
+pairRtt = {}
 
 @dataclass
 class FlowInput:

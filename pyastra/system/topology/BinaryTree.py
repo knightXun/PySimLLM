@@ -1,13 +1,15 @@
+import enum 
+
 from Node import Node
 from BasicLogicalTopology import BasicLogicalTopology
 
 
 class BinaryTree(BasicLogicalTopology):
-    class TreeType:
+    class TreeType(enum.Enum):
         RootMax = 0
         RootMin = 1
 
-    class Type:
+    class Type(enum.Enum):
         Leaf = 0
         Root = 1
         Intermediate = 2

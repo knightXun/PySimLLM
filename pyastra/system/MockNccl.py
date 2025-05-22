@@ -1,3 +1,4 @@
+import enum
 
 NCCL_NUM_ALGORITHMS = 6
 NCCL_ALGO_UNDEF = -1
@@ -32,17 +33,17 @@ NCCL_TOPO_PATTERN_RING = 4
 NCCL_TOPO_PATTERN_NVLS = 5
 
 NCCL_NUM_FUNCTIONS = 5
-ncclFunc_t = {
-    "ncclFuncBroadcast": 0,
-    "ncclFuncReduce": 1,
-    "ncclFuncAllGather": 2,
-    "ncclFuncReduceScatter": 3,
-    "ncclFuncAllReduce": 4,
-    "ncclFuncSendRecv": 5,
-    "ncclFuncSend": 6,
-    "ncclFuncRecv": 7,
-    "ncclNumFuncs": 8
-}
+
+class ncclFunc_t(enum.Enum):
+    ncclFuncBroadcast = 0
+    ncclFuncReduce = 1
+    ncclFuncAllGather = 2
+    ncclFuncReduceScatter = 3
+    ncclFuncAllReduce = 4
+    ncclFuncSendRecv = 5
+    ncclFuncSend = 6
+    ncclFuncRecv = 7
+    ncclNumFuncs = 8
 
 llMaxBws = [
     [39.0, 39.0, 20.4],
@@ -163,7 +164,7 @@ class ncclWorkElem:
         self.nChannels = 0
         self.redOpArg = 0
 
-NCCL_MAX_WORK_ELEMENTS = (NCCL_WORK_SIZE - alignUp(len(ncclWorkHeader().__dict__), alignof(ncclWorkElem())) // len(ncclWorkElem().__dict__))
+# NCCL_MAX_WORK_ELEMENTS = (NCCL_WORK_SIZE - alignUp(len(ncclWorkHeader().__dict__), alignof(ncclWorkElem())) // len(ncclWorkElem().__dict__))
 
 treeCorrectionFactor = [
     [1.0, 1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.6, 0.5, 0.4, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.0, 1.0, 1.0],

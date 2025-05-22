@@ -1,7 +1,7 @@
 import sys
 
 from system.topology.RingTopology import RingTopology
-from AstraNetworkAPI import sim_request
+from AstraNetworkAPI import sim_request, req_type_e
 from system.MockNcclChannel import *
 from system.SendPacketEventHandlerData import SendPacketEventHandlerData
 from PacketBundle import PacketBundle
@@ -48,7 +48,7 @@ class DoubleBinaryTreeAllReduce(Algorithm):
                 "srcRank": self.stream.owner.id,
                 "dstRank": self.parent,
                 "tag": self.stream.stream_num,
-                "reqType": "UINT8",
+                "reqType": req_type_e.UINT8,
                 "vnet": self.stream.current_queue_id,
                 "layerNum": self.layer_num
             }
@@ -111,7 +111,7 @@ class DoubleBinaryTreeAllReduce(Algorithm):
                 "srcRank": self.stream.owner.id,
                 "dstRank": self.parent,
                 "tag": self.stream.stream_num,
-                "reqType": "UINT8",
+                "reqType": req_type_e.UINT8,
                 "vnet": self.stream.current_queue_id,
                 "layerNum": self.layer_num
             }
@@ -137,7 +137,7 @@ class DoubleBinaryTreeAllReduce(Algorithm):
                 "srcRank": self.stream.owner.id,
                 "dstRank": self.left_child,
                 "tag": self.stream.stream_num,
-                "reqType": "UINT8",
+                "reqType": req_type_e.UINT8,
                 "vnet": self.stream.current_queue_id,
                 "layerNum": self.layer_num
             }
@@ -148,7 +148,7 @@ class DoubleBinaryTreeAllReduce(Algorithm):
                 "srcRank": self.stream.owner.id,
                 "dstRank": self.right_child,
                 "tag": self.stream.stream_num,
-                "reqType": "UINT8",
+                "reqType": req_type_e.UINT8,
                 "vnet": self.stream.current_queue_id,
                 "layerNum": self.layer_num
             }
@@ -180,7 +180,7 @@ class DoubleBinaryTreeAllReduce(Algorithm):
                 "srcRank": self.stream.owner.id,
                 "dstRank": only_child_id,
                 "tag": self.stream.stream_num,
-                "reqType": "UINT8",
+                "reqType": req_type_e.UINT8,
                 "vnet": self.stream.current_queue_id,
                 "layerNum": self.layer_num
             }

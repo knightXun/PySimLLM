@@ -119,9 +119,9 @@ class MockNcclGroup:
     self.AllGroups = {}
     
     # init groups
-    nccl_log = MockNcclLog.getInstance()
+    nccl_log = MockNcclLog.get_instance()
     if _ngpus % _gpus_per_nodes != 0 or _ngpus // _gpus_per_nodes <= 0:
-        nccl_log.writeLog(NcclLogLevel.ERROR, "The number of GPUs used is not a multiple of the number of GPUs per node.")
+        nccl_log.write_log(NcclLogLevel.ERROR, "The number of GPUs used is not a multiple of the number of GPUs per node.")
         return
     
     all_group_idx = 0
@@ -135,7 +135,7 @@ class MockNcclGroup:
     
     if (TP_nums <= 0 or DP_nums <= 0 or PP_nums <= 0 or EP_nums <= 0 or DP_EP_nums <= 0 or 
         (_TP_size * _DP_size * _PP_size != _ngpus) or (_EP_size * _DP_EP_size != _DP_size)):
-        nccl_log.writeLog(NcclLogLevel.ERROR, "The group division method is incorrect.")
+        nccl_log.write_log(NcclLogLevel.ERROR, "The group division method is incorrect.")
         return
     
     nNodesPerTPGroup = _TP_size // nlocalranks + (_TP_size % nlocalranks > 0)
@@ -240,10 +240,10 @@ class MockNcclGroup:
     gp_info = None
     gp_idx = 0
     end_rank = 0
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in generating the flow model.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in generating the flow model.")
         return None
     
     gp_idx = self.GroupIndex[(rank, type)]
@@ -292,10 +292,10 @@ class MockNcclGroup:
     nranks = 0
     chunkcount = 0
     chunkid = 0
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in generating the flow model.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in generating the flow model.")
         return {}
     
     gp_idx = self.GroupIndex[(rank, type)]
@@ -549,12 +549,12 @@ class MockNcclGroup:
     nranks = 0
     chunkcount = 0
     chunkid = 0
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     ringchannels = None
     gp_idx = None
 
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in generating the flow model.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in generating the flow model.")
         return {}
     else:
       gp_idx = self.GroupIndex[(rank, type)]
@@ -618,10 +618,10 @@ class MockNcclGroup:
     rank2pflowmodels = {}
     task_list = {}
     task_list2 = {}
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in generating the flow model.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in generating the flow model.")
         return {}
     
     gp_idx = self.GroupIndex[(rank, type)]
@@ -972,10 +972,10 @@ class MockNcclGroup:
     chunk_count = 4
     rank2flowmodels = defaultdict(dict)
     rank2pflowmodels = {}
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no corresponding group info , resulting in an error in genAllreduceNVLSFlowModels.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no corresponding group info , resulting in an error in genAllreduceNVLSFlowModels.")
         return {}
     
     gp_idx = self.GroupIndex[(rank, type)]
@@ -1044,34 +1044,34 @@ class MockNcclGroup:
     return rank2pflowmodels
         
   def genallReduceNVLSTreeFlowModels(self, type: GroupType, rank: int, data_size: int) -> FlowModels:
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     gp_info = GroupInfo()
     gp_idx = 0
     chunk_count = 1
     result = {}
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no relevant group info, resulting in an error in generating genallReduceNVLSTreeFlowModels.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no relevant group info, resulting in an error in generating genallReduceNVLSTreeFlowModels.")
         return None
     
     gp_idx = self.GroupIndex[(rank, type)]
     gp_info = self.AllGroups[gp_idx]
     nvlstreechannels = self.AllNVLStreechannels[gp_idx]
-    NcclLog.writeLog(NcclLogLevel.DEBUG, f" nvlstreechannels.size()  {len(nvlstreechannels)}")
+    NcclLog.write_log(NcclLogLevel.DEBUG, f" nvlstreechannels.size()  {len(nvlstreechannels)}")
     
     chunk_size = data_size // len(nvlstreechannels) // chunk_count
     
     for tree_id, tree_nodes_map in nvlstreechannels.items():
         if rank == 0:
             for node_rank, nodes_list in tree_nodes_map.items():
-                NcclLog.writeLog(NcclLogLevel.DEBUG, f" rank  {node_rank} nvls tree nodes ")
+                NcclLog.write_log(NcclLogLevel.DEBUG, f" rank  {node_rank} nvls tree nodes ")
                 for i, node in enumerate(nodes_list):
-                    NcclLog.writeLog(NcclLogLevel.DEBUG, f" node  {i} rank  {node.rank}")
+                    NcclLog.write_log(NcclLogLevel.DEBUG, f" node  {i} rank  {node.rank}")
                     if node.up is not None:
-                        NcclLog.writeLog(NcclLogLevel.DEBUG, f" up  {node.up.rank}")
-                    NcclLog.writeLog(NcclLogLevel.DEBUG, " down ")
+                        NcclLog.write_log(NcclLogLevel.DEBUG, f" up  {node.up.rank}")
+                    NcclLog.write_log(NcclLogLevel.DEBUG, " down ")
                     for down_node in node.down:
-                        NcclLog.writeLog(NcclLogLevel.DEBUG, f"{down_node.rank} ")
+                        NcclLog.write_log(NcclLogLevel.DEBUG, f"{down_node.rank} ")
         
         upinDegree = {}
         downinDegree = {}
@@ -1217,10 +1217,10 @@ class MockNcclGroup:
   def genAllReduceTreeFlowModels(self, type: GroupType, rank: int, data_size: int) -> Dict[int, FlowModels]:
     chunk_count = 64
     result = {}
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex or self.Alltreechannels.get(self.GroupIndex[(rank, type)]) is None:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no corresponding group info , resulting in an error in genAllreduceNVLSFlowModels.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no corresponding group info , resulting in an error in genAllreduceNVLSFlowModels.")
         return None
     
     gp_idx = self.GroupIndex[(rank, type)]
@@ -1506,10 +1506,10 @@ class MockNcclGroup:
     localrings = defaultdict(list)
     nNodes = 0
     nlocalranks = 0
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no relevant group info, resulting in an error in gen_local_ring")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no relevant group info, resulting in an error in gen_local_ring")
         return {}
     
     gp_idx = self.GroupIndex[(rank, type)]
@@ -1533,10 +1533,10 @@ class MockNcclGroup:
   def genringchannels(self, rank: int, type: GroupType) -> RingChannels:    
     ringchannels = defaultdict(lambda: defaultdict(list))
     localrings = self.gen_local_ring(rank, type)
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "No corresponding group information is generated, and there is an error in creating the ring channel.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "No corresponding group information is generated, and there is an error in creating the ring channel.")
     
     gp_idx = self.GroupIndex[(rank, type)]
     gp_info = self.AllGroups[gp_idx]
@@ -1573,10 +1573,10 @@ class MockNcclGroup:
   def gettreechannels(self, rank: int, type: GroupType) -> TreeChannels:    
     treechannels = defaultdict(dict)
     localrings = defaultdict(list)
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in gettreechannels.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in gettreechannels.")
         return {}
     
     gp_idx = self.GroupIndex[(rank, type)]
@@ -1624,10 +1624,10 @@ class MockNcclGroup:
     return treechannels
         
   def get_nvls_channels(self, rank: int, type: GroupType) -> TreeChannels:
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in get_nvls_channels.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no corresponding group info and group ring channel, resulting in an error in get_nvls_channels.")
         return {}
     
     gp_idx = self.GroupIndex[(rank, type)]
@@ -1635,7 +1635,7 @@ class MockNcclGroup:
     nvlschannel = defaultdict(dict)
     
     if gp_info.nNodes > 1:
-        NcclLog.writeLog(NcclLogLevel.DEBUG, "%d", "error NVLS ALGO dont")
+        NcclLog.write_log(NcclLogLevel.DEBUG, "%d", "error NVLS ALGO dont")
         return {}
     else:
         ranks = gp_info.Ranks
@@ -1653,10 +1653,10 @@ class MockNcclGroup:
   def get_nvls_tree_channels(self, rank: int, type: GroupType) -> NVLStreechannels:    
     nvlstreechannels = defaultdict(lambda: defaultdict(list))
     localrings = defaultdict(list)
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no corresponding group info , resulting in an error in get_nvls_tree_channels.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no corresponding group info , resulting in an error in get_nvls_tree_channels.")
         return {}
     
     gp_idx = self.GroupIndex[(rank, type)]
@@ -1698,23 +1698,23 @@ class MockNcclGroup:
                 intra_topo = [noderanks[index], gp_info.NVSwitchs[i]]
                 intra_topo.extend(noderanks)
                 
-                NcclLog.writeLog(NcclLogLevel.DEBUG, f" node  {i} intra_topo")
+                NcclLog.write_log(NcclLogLevel.DEBUG, f" node  {i} intra_topo")
                 for num in intra_topo:
-                    NcclLog.writeLog(NcclLogLevel.DEBUG, f" {num}")
+                    NcclLog.write_log(NcclLogLevel.DEBUG, f" {num}")
                 
                 root_node = self.gen_nvls_tree_intra_channels(intra_topo, nvlstreechannel)
                 nodencclchannlenodes[i] = root_node
             
             if rank == 0:
                 for node_rank, nodes in nvlstreechannel.items():
-                    NcclLog.writeLog(NcclLogLevel.DEBUG, f" rank  {node_rank} nvls tree nodes ")
+                    NcclLog.write_log(NcclLogLevel.DEBUG, f" rank  {node_rank} nvls tree nodes ")
                     for i, node in enumerate(nodes):
-                        NcclLog.writeLog(NcclLogLevel.DEBUG, f" node  {i} rank  {node.rank}")
+                        NcclLog.write_log(NcclLogLevel.DEBUG, f" node  {i} rank  {node.rank}")
                         if node.up is not None:
-                            NcclLog.writeLog(NcclLogLevel.DEBUG, f" up  {node.up.rank}")
-                        NcclLog.writeLog(NcclLogLevel.DEBUG, " down ")
+                            NcclLog.write_log(NcclLogLevel.DEBUG, f" up  {node.up.rank}")
+                        NcclLog.write_log(NcclLogLevel.DEBUG, " down ")
                         for down in node.down:
-                            NcclLog.writeLog(NcclLogLevel.DEBUG, f" {down.rank} ")
+                            NcclLog.write_log(NcclLogLevel.DEBUG, f" {down.rank} ")
             
             self.gen_nvls_tree_inter_channels(root, nodencclchannlenodes, nvlstreechannel)
             nvlstreechannels[channel_id] = nvlstreechannel
@@ -1742,16 +1742,16 @@ class MockNcclGroup:
   def gen_nvls_tree_inter_channels(self, root: DoubleBinaryTreeNode, 
                                     nodencclchannlenodes: Dict[int, ncclChannelNode], 
                                     nvlstreechannel: Dict[int, List[ncclChannelNode]]) -> ncclChannelNode:
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if root is None:
         return None
     else:
-        NcclLog.writeLog(NcclLogLevel.DEBUG, f"before root.right:  {root.right}")
-        NcclLog.writeLog(NcclLogLevel.DEBUG, f"before root.left:  {root.left}")
+        NcclLog.write_log(NcclLogLevel.DEBUG, f"before root.right:  {root.right}")
+        NcclLog.write_log(NcclLogLevel.DEBUG, f"before root.left:  {root.left}")
         
         if root.left is not None:
-            NcclLog.writeLog(NcclLogLevel.DEBUG, f"after root.left:  {root.left}")
+            NcclLog.write_log(NcclLogLevel.DEBUG, f"after root.left:  {root.left}")
             cur = nodencclchannlenodes[root.node]
             left = nodencclchannlenodes[root.left.node]
             cur.down.append(left)
@@ -1759,7 +1759,7 @@ class MockNcclGroup:
             self.gen_nvls_tree_inter_channels(root.left, nodencclchannlenodes, nvlstreechannel)
         
         if root.right is not None:
-            NcclLog.writeLog(NcclLogLevel.DEBUG, f"after root.right:  {root.right}")
+            NcclLog.write_log(NcclLogLevel.DEBUG, f"after root.right:  {root.right}")
             cur = nodencclchannlenodes[root.node]
             right = nodencclchannlenodes[root.right.node]
             cur.down.append(right)
@@ -1769,10 +1769,10 @@ class MockNcclGroup:
 
   def get_algo_proto_info(self, type: GroupType, rank: int, op: ComType, 
                            data_size: int) -> ncclInfo:
-    NcclLog = MockNcclLog.getInstance()
+    NcclLog = MockNcclLog.get_instance()
     
     if (rank, type) not in self.GroupIndex:
-        NcclLog.writeLog(NcclLogLevel.ERROR, "There is no corresponding group info, resulting in an error with get_algo_proto_info.")
+        NcclLog.write_log(NcclLogLevel.ERROR, "There is no corresponding group info, resulting in an error with get_algo_proto_info.")
         return None
     
     gp_info = self.AllGroups[self.GroupIndex[(rank, type)]]

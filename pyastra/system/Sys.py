@@ -37,6 +37,7 @@ from SendPacketEventHandlerData import *
 from UsageTracker import *
 from MockNcclChannel import *
 from BasicEventHandlerData import *
+from MockNcclGroup import GroupType
 
 class ParallelStrategy(enum.Enum):
     TP = 0
@@ -119,8 +120,8 @@ class SchedulerUnit:
           stream_list[i].init()
           self.running_streams[vnet] += 1
       
-      nccl_log = MockNcclLog.getInstance()
-      nccl_log.writeLog(NcclLogLevel.DEBUG, "Sys::SchedulerUnit::notify_stream_added finished")
+      nccl_log = MockNcclLog.get_instance()
+      nccl_log.write_log(NcclLogLevel.DEBUG, "Sys::SchedulerUnit::notify_stream_added finished")
 
   def notify_stream_added_into_ready_list(self):
       if (self.sys.first_phase_streams < self.ready_list_threshold and
@@ -474,10 +475,10 @@ class Sys(Callable):
       self.running_list.append(stream)
 
     def schedule(self, num: int) -> None:
-        nccl_log = MockNcclLog.getInstance()
+        nccl_log = MockNcclLog.get_instance()
         ready_list_size = len(self.ready_list)
         counter = min(num, ready_list_size)
-        nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, 
+        nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, 
                          f"Sys.cc::schedule num {num} ready_list_size {ready_list_size}")
 
         while counter > 0:
@@ -499,7 +500,7 @@ class Sys(Callable):
 
             counter -= 1
 
-        nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "Sys::schedule finished")
+        nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "Sys::schedule finished")
 
     def register_phases(
         self,
@@ -523,8 +524,8 @@ class Sys(Callable):
         should_schedule = False
         my_cycles = cycles 
 
-        nccl_log = MockNcclLog.getInstance()
-        nccl_log.writeLog(NcclLogLevel.DEBUG, f"try_register_event EventType {event}")
+        nccl_log = MockNcclLog.get_instance()
+        nccl_log.write_log(NcclLogLevel.DEBUG, f"try_register_event EventType {event}")
 
         cs = None
         if self.NS3_MTP:
@@ -1431,7 +1432,7 @@ class Sys(Callable):
         collective_type: Common.ComType,
         pref_scheduling: SchedulingPolicy,
         event: Common.EventType,
-        layer_ptr: PyCallable
+        layer_ptr
     ) -> DataSet:
         chunk_size = self.determine_chunk_size(size, collective_type)
         if self.id == 0:
@@ -1561,7 +1562,7 @@ class Sys(Callable):
                 newStream = StreamBaseline(self, dataset, stream_counter, vect, pri)
                 newStream.current_queue_id = -1
                 self.insert_into_ready_list(newStream)
-                MockNcclLog.getInstance().writeLog(MockNcclLog.NcclLogLevel.DEBUG, "Sys::generate_collective finished")
+                MockNcclLog.get_instance().write_log(MockNcclLog.NcclLogLevel.DEBUG, "Sys::generate_collective finished")
                 stream_counter += 1
             else:
                 dataset.active = False
@@ -1586,7 +1587,7 @@ class Sys(Callable):
         boost_mode: bool
     ) -> CollectivePhase:
     
-        NcclLog = MockNcclLog.getInstance()
+        NcclLog = MockNcclLog.get_instance()
 
         if collective_implementation.type in [CollectiveImplementationType.Ring, CollectiveImplementationType.OneRing]:
             vn = CollectivePhase(
@@ -1665,15 +1666,15 @@ class Sys(Callable):
                 channels = self.mock_nccl_comms[comm_ps].get_rings()
                 cs.ExitSection()
 
-                NcclLog.writeLog(NcclLogLevel.DEBUG, f"rank {self.id} generate FlowModels")
+                NcclLog.write_log(NcclLogLevel.DEBUG, f"rank {self.id} generate FlowModels")
                 if RingFlowModels is not None:
-                    NcclLog.writeLog(NcclLogLevel.DEBUG, f"rank {self.id} NcclMock generate {len(channels)} channel and flow model count: {len(RingFlowModels)}")
+                    NcclLog.write_log(NcclLogLevel.DEBUG, f"rank {self.id} NcclMock generate {len(channels)} channel and flow model count: {len(RingFlowModels)}")
                     for flow in RingFlowModels:
                         prev = -1 if len(flow.second.prev) == 0 else flow.second.prev[0]
                         parent_flow_id = -1 if len(flow.second.parent_flow_id) == 0 else flow.second.parent_flow_id[0]
                         child_flow_id = -1 if len(flow.second.child_flow_id) == 0 else flow.second.child_flow_id[0]
 
-                        NcclLog.writeLog(NcclLogLevel.DEBUG, f" {flow.first.first}, {flow.first.second}, {flow.second.src} to {flow.second.dest} current_flow_id {flow.second.flow_id} prev rank: {prev} parent_flow_id: {parent_flow_id} child_flow_id: {child_flow_id} chunk_id: {flow.second.chunk_id} flow_size: {flow.second.flow_size} chunk_count: {flow.second.chunk_count} ")
+                        NcclLog.write_log(NcclLogLevel.DEBUG, f" {flow.first.first}, {flow.first.second}, {flow.second.src} to {flow.second.dest} current_flow_id {flow.second.flow_id} prev rank: {prev} parent_flow_id: {parent_flow_id} child_flow_id: {child_flow_id} chunk_id: {flow.second.chunk_id} flow_size: {flow.second.flow_size} chunk_count: {flow.second.chunk_count} ")
 
                 vn = CollectivePhase(
                     self,
@@ -1724,15 +1725,15 @@ class Sys(Callable):
                 treechannels = self.mock_nccl_comms[comm_ps].get_treechannels()
                 cs.ExitSection()
 
-                NcclLog.writeLog(NcclLogLevel.DEBUG, f"rank {self.id} generate FlowModels")
+                NcclLog.write_log(NcclLogLevel.DEBUG, f"rank {self.id} generate FlowModels")
                 if RingFlowModels is not None:
-                    NcclLog.writeLog(NcclLogLevel.DEBUG, f"rank {self.id} NcclMock generate {len(treechannels)} channel and flow model count: {len(RingFlowModels)}")
+                    NcclLog.write_log(NcclLogLevel.DEBUG, f"rank {self.id} NcclMock generate {len(treechannels)} channel and flow model count: {len(RingFlowModels)}")
                     for flow in RingFlowModels:
                         prev = -1 if len(flow.second.prev) == 0 else flow.second.prev[0]
                         parent_flow_id = -1 if len(flow.second.parent_flow_id) == 0 else flow.second.parent_flow_id[0]
                         child_flow_id = -1 if len(flow.second.child_flow_id) == 0 else flow.second.child_flow_id[0]
 
-                        NcclLog.writeLog(NcclLogLevel.DEBUG, f" {flow.first.first}, {flow.first.second}, {flow.second.src} to {flow.second.dest} current_flow_id {flow.second.flow_id} prev rank: {prev} parent_flow_id: {parent_flow_id} child_flow_id: {child_flow_id} chunk_id: {flow.second.chunk_id} flow_size: {flow.second.flow_size} chunk_count: {flow.second.chunk_count} ")
+                        NcclLog.write_log(NcclLogLevel.DEBUG, f" {flow.first.first}, {flow.first.second}, {flow.second.src} to {flow.second.dest} current_flow_id {flow.second.flow_id} prev rank: {prev} parent_flow_id: {parent_flow_id} child_flow_id: {child_flow_id} chunk_id: {flow.second.chunk_id} flow_size: {flow.second.flow_size} chunk_count: {flow.second.chunk_count} ")
 
                 vn = CollectivePhase(
                     self,
@@ -1825,9 +1826,9 @@ class Sys(Callable):
         queue.insert(it, base_stream)
 
     def proceed_to_next_vnet_baseline(self, stream: StreamBaseline) -> None:
-        nccl_log = MockNcclLog.getInstance()
+        nccl_log = MockNcclLog.get_instance()
         
-        nccl_log.writeLog(
+        nccl_log.write_log(
             MockNcclLog.NcclLogLevel.DEBUG,
             f"proceed_to_next_vnet_baseline :: phase1, stream->current_queue_id {stream.current_queue_id}, stream->phases_to_go.size {len(stream.phases_to_go)}"
         )
@@ -1846,7 +1847,7 @@ class Sys(Callable):
             stream.take_bus_stats_average()  
             stream.dataset.notify_stream_finished(stream)  
 
-        nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: phase2")
+        nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: phase2")
         if stream.current_queue_id >= 0 and stream.my_current_phase.enabled:
             try:
                 target_queue = self.active_Streams[stream.my_current_phase.queue_id]
@@ -1855,25 +1856,25 @@ class Sys(Callable):
                         del target_queue[idx]
                         break
             except KeyError:
-                nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "Target queue not found in active_Streams")
+                nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "Target queue not found in active_Streams")
 
-        nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: phase2-1")
+        nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: phase2-1")
         if len(stream.phases_to_go) == 0:
             self.total_running_streams -= 1
             if previous_vnet >= 0:
-                nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: phase2-1")
+                nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: phase2-1")
                 latency = self.boosted_tick() - stream.last_init
                 self.scheduler_unit.notify_stream_removed(previous_vnet, latency)
             
             try:
                 self.running_list.pop(0)
             except IndexError:
-                nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "running_list is empty")
+                nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "running_list is empty")
             
-            nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: delete stream")
+            nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: delete stream")
             return  
 
-        nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: phase3")
+        nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: phase3")
         stream.steps_finished += 1
         next_phase = stream.phases_to_go.popleft() 
 
@@ -1889,7 +1890,7 @@ class Sys(Callable):
         stream.net_message_latency.append(0.0)
         stream.net_message_counter = 0
 
-        nccl_log.writeLog(
+        nccl_log.write_log(
             MockNcclLog.NcclLogLevel.DEBUG,
             f"proceed_to_next_vnet_baseline :: phase1, stream->current_queue_id {stream.current_queue_id}, stream->phases_to_go.size {len(stream.phases_to_go)}"
         )
@@ -1898,7 +1899,7 @@ class Sys(Callable):
             target_queue = self.active_Streams.setdefault(stream.current_queue_id, [])
             self.insert_stream(target_queue, stream)
 
-        nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: phase4")
+        nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: phase4")
         stream.state = StreamState.Ready
 
         if previous_vnet >= 0:
@@ -1911,10 +1912,10 @@ class Sys(Callable):
                 self.first_phase_streams += 1
                 self.total_running_streams += 1
             except IndexError:
-                nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "ready_list is empty")
+                nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "ready_list is empty")
 
         self.scheduler_unit.notify_stream_added(stream.current_queue_id)
-        nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: exit")
+        nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "proceed_to_next_vnet_baseline :: exit")
 
 
     def determine_chunk_size(self, size: int, type: Common.ComType) -> int:
@@ -1953,10 +1954,10 @@ class Sys(Callable):
         node = ehd.node
         event = ehd.event
         cs = None 
-        nccl_log = MockNcclLog.getInstance()
+        nccl_log = MockNcclLog.get_instance()
 
         if event == EventType.CallEvents:
-            nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG, "Sys::handleEvent EventType::CallEvents")
+            nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG, "Sys::handleEvent EventType::CallEvents")
             node.iterate()
             del ehd 
 
@@ -1978,7 +1979,7 @@ class Sys(Callable):
 
         elif event == EventType.PacketSent:
             sendhd = SendPacketEventHandlerData(ehd)
-            nccl_log.writeLog(MockNcclLog.NcclLogLevel.DEBUG,
+            nccl_log.write_log(MockNcclLog.NcclLogLevel.DEBUG,
                               f"packet sent, sender id: {sendhd.senderNodeId}, node id: {node.id}")
 
             # 临界区逻辑（仅当NS3_MTP或PHY_MTP启用时加锁）
@@ -2110,34 +2111,34 @@ class Sys(Callable):
         if TP_size > 1:
             p_comm = MockNcclComm(
                 self.id, 
-                MockNccl.GroupType.TP,  # 假设GroupType是MockNccl中的枚举
+                GroupType.TP,  # 假设GroupType是MockNccl中的枚举
                 self.GlobalGroup
             )
-            self.mock_nccl_comms[MockNccl.GroupType.TP] = p_comm  # 键使用枚举值
+            self.mock_nccl_comms[GroupType.TP] = p_comm  # 键使用枚举值
 
         if DP_size > 1:
             p_comm = MockNcclComm(
                 self.id, 
-                MockNccl.GroupType.DP, 
+                GroupType.DP, 
                 self.GlobalGroup
             )
-            self.mock_nccl_comms[MockNccl.GroupType.DP] = p_comm
+            self.mock_nccl_comms[GroupType.DP] = p_comm
 
         if EP_size > 1:
             p_comm = MockNcclComm(
                 self.id, 
-                MockNccl.GroupType.EP, 
+                GroupType.EP, 
                 self.GlobalGroup
             )
-            self.mock_nccl_comms[MockNccl.GroupType.EP] = p_comm
+            self.mock_nccl_comms[GroupType.EP] = p_comm
 
         if DP_EP_size > 1:
             p_comm = MockNcclComm(
                 self.id, 
-                MockNccl.GroupType.DP_EP, 
+                GroupType.DP_EP, 
                 self.GlobalGroup
             )
-            self.mock_nccl_comms[MockNccl.GroupType.DP_EP] = p_comm
+            self.mock_nccl_comms[GroupType.DP_EP] = p_comm
 
         return True
 

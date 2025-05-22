@@ -1,5 +1,8 @@
+import enum
+
 class LogicalTopology:
-    class Complexity:
+    
+    class Complexity(enum.Enum):
         Basic = "Basic"
         Complex = "Complex"
 

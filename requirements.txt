@@ -1,0 +1,6 @@
+# python 包依賴項
+ns3==3.39.post2 # 3.38.post271 3.39.post2 
+pyverbs==56.1rc0
+cppyy==2.4.2
+cppyy-backend==1.14.10
+cppyy-cling==6.27.1

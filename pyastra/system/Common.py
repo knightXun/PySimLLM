@@ -1,9 +1,6 @@
 import enum
 
-# 这里假设 AstraNetworkAPI 有对应的 Python 模块，如果没有则需要替换为实际可用的代码
-# 由于没有具体内容，这里暂时用空类表示
-class AstraNetworkAPI:
-    pass
+from AstraNetworkAPI import AstraNetworkAPI
 
 class GPUType(enum.Enum):
     A100 = 0
@@ -53,7 +50,7 @@ class SchedulingPolicy(enum.Enum):
     LIFO = 0
     FIFO = 1
     HIGHEST = 2
-    None = 3
+    NONE = 3
 
 class IntraDimensionScheduling(enum.Enum):
     FIFO = 0

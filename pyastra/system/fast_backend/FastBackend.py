@@ -6,7 +6,7 @@ from AstraMemoryAPI import AstraMemoryAPI
 
 
 class time_type_e(enum.Enum):
-    NS = 'ns'
+    NS = 0
 
 class timespec_t:
     def __init__(self):

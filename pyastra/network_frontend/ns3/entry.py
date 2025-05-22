@@ -4,76 +4,37 @@ import os
 import threading
 from collections import defaultdict
 import ns3
+import ns3 
 
-# 模拟AstraSim命名空间
-class AstraSim:
-    class ncclFlowTag:
-        def __init__(self):
-            self.current_flow_id = -1
-            self.child_flow_id = -1
-            self.tag_id = -1
-            self.sender_node = -1
-            self.receiver_node = -1
-            self.channel_id = -1
-            self.nvls_on = False
+from analytical.AstraSim import AnaSim
+from system.MockNcclLog import MockNcclLog, ncclFlowTag, NcclLogLevel
+from system.RecvPacketEventHandlerData import RecvPacketEventHandlerData
+from system.SendPacketEventHandlerData import SendPacketEventHandlerData
+from system.Common import Sys
+from common import portNumber, serverAddress, has_win, error_rate_per_link, maxBdp, global_t
+from common import pairBdp, maxRtt, pairRtt, pairBw
 
-    class RecvPacketEventHadndlerData:
-        def __init__(self):
-            self.flowTag = AstraSim.ncclFlowTag()
+class task1:
+    def __init__(self, src=0, dest=0, type=0, count=0, fun_arg=None, msg_handler=None, schTime=0.0):
+        self.src = src           
+        self.dest = dest         
+        self.type = type        
+        self.count = count      
+        self.fun_arg = fun_arg  
+        self.msg_handler = msg_handler  
+        self.schTime = schTime   
 
-    class SendPacketEventHandlerData:
-        def __init__(self):
-            self.flowTag = AstraSim.ncclFlowTag()
+receiver_pending_queue = {}
+sender_src_port_map = {}
+expeRecvHash = {}
+recvHash = {}
+sentHash = {}
+nodeHash = {}
+waiting_to_sent_callback = {}
+waiting_to_notify_receiver = {}
+received_chunksize = {}
+sent_chunksize = {}
 
-    class Sys:
-        @staticmethod
-        def boostedTick():
-            return ns3.Simulator.Now().GetNanoSeconds()  # 使用NS3模拟器时间
-
-# 日志单例类
-class MockNcclLog:
-    _instance = None
-    _logger = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._logger = ns3.LogComponentGet("MockNcclLog")
-            ns3.LogComponentEnable("MockNcclLog", ns3.LOG_LEVEL_ALL)
-        return cls._instance
-
-    def writeLog(self, level, message, *args):
-        log_level_map = {
-            "DEBUG": ns3.LOG_DEBUG,
-            "INFO": ns3.LOG_INFO,
-            "ERROR": ns3.LOG_ERROR
-        }
-        self._logger.Log(log_level_map[level], message % args)
-
-# 全局状态管理
-class GlobalState:
-    portNumber = defaultdict(lambda: defaultdict(int))  # portNumber[src][dst]
-    serverAddress = {}  # 节点IP地址映射
-    pairRtt = defaultdict(lambda: defaultdict(int))  # 节点间RTT
-    pairBw = defaultdict(lambda: defaultdict(int))  # 节点间带宽
-    maxBdp = 0
-    pairBdp = defaultdict(lambda: defaultdict(int))
-    has_win = False
-    global_t = 0
-
-# 核心数据结构
-receiver_pending_queue = defaultdict(AstraSim.ncclFlowTag)
-sender_src_port_map = defaultdict(AstraSim.ncclFlowTag)
-expeRecvHash = defaultdict()
-recvHash = defaultdict(int)
-sentHash = defaultdict()
-nodeHash = defaultdict(int)
-waiting_to_sent_callback = defaultdict(int)
-waiting_to_notify_receiver = defaultdict(int)
-received_chunksize = defaultdict(int)
-sent_chunksize = defaultdict(int)
-
-# 核心函数实现
 def is_sending_finished(src, dst, flow_tag):
     key = (flow_tag.current_flow_id, (src, dst))
     if key in waiting_to_sent_callback:
@@ -85,18 +46,18 @@ def is_sending_finished(src, dst, flow_tag):
 
 def is_receive_finished(src, dst, flow_tag):
     key = (flow_tag.current_flow_id, (src, dst))
-    nccl_log = MockNcclLog()
+    nccl_log = MockNcclLog.get_instance()
     if key in waiting_to_notify_receiver:
-        nccl_log.writeLog("DEBUG", "is_receive_finished waiting_to_notify_receiver tag_id %d src %d dst %d count %d",
+        nccl_log.write_log( NcclLogLevel.DEBUG, "is_receive_finished waiting_to_notify_receiver tag_id %d src %d dst %d count %d",
                          flow_tag.current_flow_id, src, dst, waiting_to_notify_receiver[key])
         waiting_to_notify_receiver[key] -= 1
         if waiting_to_notify_receiver[key] == 0:
-            del waiting_to_notify_receiver[key]
+            waiting_to_notify_receiver.erase(key)
             return True
     return False
 
 def send_flow(src, dst, max_packet_count, msg_handler, fun_arg, tag, request):
-    nccl_log = MockNcclLog()
+    nccl_log = MockNcclLog.get_instance()
     qps_per_connection = 1  # 对应原宏定义_QPS_PER_CONNECTION_
     packet_count = (max_packet_count + qps_per_connection - 1) // qps_per_connection
     left_packet_count = max_packet_count
@@ -104,8 +65,8 @@ def send_flow(src, dst, max_packet_count, msg_handler, fun_arg, tag, request):
     for index in range(qps_per_connection):
         real_packet_count = min(packet_count, left_packet_count)
         left_packet_count -= real_packet_count
-        port = GlobalState.portNumber[src][dst]
-        GlobalState.portNumber[src][dst] += 1  # 模拟端口自增
+        port = portNumber[src][dst]
+        portNumber[src][dst] += 1 
 
         # 临界区处理（NS3 MTP模式）
         if os.getenv("NS3_MTP"):
@@ -122,60 +83,109 @@ def send_flow(src, dst, max_packet_count, msg_handler, fun_arg, tag, request):
             try:
                 send_lat = int(send_lat_env) * 1000  # 转换为纳秒
             except ValueError:
-                nccl_log.writeLog("ERROR", "send_lat set error")
+                nccl_log.write_log("ERROR", "send_lat set error")
                 sys.exit(-1)
 
-        # 创建NS3 RDMA客户端应用
         pg = 3
         dport = 100
-        src_ip = GlobalState.serverAddress[src]
-        dst_ip = GlobalState.serverAddress[dst]
+        src_ip = serverAddress[src]
+        dst_ip = serverAddress[dst]
         
         client_helper = ns3.RdmaClientHelper(
             pg, src_ip, dst_ip, port, dport, real_packet_count,
-            GlobalState.maxBdp if GlobalState.has_win and GlobalState.global_t == 1 
-            else GlobalState.pairBdp[src][dst],
-            GlobalState.maxRtt if GlobalState.global_t == 1 
-            else GlobalState.pairRtt[src][dst],
+            maxBdp if has_win and global_t == 1 
+            else pairBdp[src][dst],
+            maxRtt if global_t == 1 
+            else pairRtt[src][dst],
             msg_handler, fun_arg, tag, src, dst
         )
 
         if nvls_on:
             client_helper.SetAttribute("NVLS_enable", ns3.UintegerValue(1))
 
-        # 安装应用并启动
-        app_container = client_helper.Install(ns3.NodeList.GetNode(src))
-        app_container.Start(ns3.Time(ns3.NanoSeconds(send_lat)))
 
-        # 更新等待计数器
-        key = (request.flowTag.current_flow_id, (src, dst))
-        waiting_to_sent_callback[key] += 1
-        waiting_to_notify_receiver[key] += 1
+        if os.getenv("NS3_MTP"):
+            with threading.Lock():
+                app_container = client_helper.Install(ns3.NodeList.GetNode(src))
+                app_container.Start(ns3.Time(ns3.NanoSeconds(send_lat)))
+                key = (request.flowTag.current_flow_id, (src, dst))
+                waiting_to_sent_callback[key] += 1
+                waiting_to_notify_receiver[key] += 1
 
-        nccl_log.writeLog("DEBUG", "waiting_to_notify_receiver current_flow_id %d src %d dst %d count %d",
+        nccl_log.write_log( NcclLogLevel.DEBUG, "waiting_to_notify_receiver current_flow_id %d src %d dst %d count %d",
                          request.flowTag.current_flow_id, src, dst, waiting_to_notify_receiver[key])
 
-def notify_receiver_receive_data(sender_node, receiver_node, message_size, flow_tag):
-    nccl_log = MockNcclLog()
-    tag = flow_tag.tag_id
+def notify_receiver_receive_data(sender_node, receiver_node, message_size, flowTag):
+    nccl_log = MockNcclLog.getInstance()
+    nccl_log.writeLog(NcclLogLevel.DEBUG, 
+                     f"{sender_node} notify receiver: {receiver_node} message size: {message_size}")
+    
+    tag = flowTag.tag_id
     key = (tag, (sender_node, receiver_node))
-
-    # 临界区处理
-    if os.getenv("NS3_MTP"):
-        with threading.Lock():
-            _notify_receiver_core(key, message_size, flow_tag, nccl_log)
-    else:
-        _notify_receiver_core(key, message_size, flow_tag, nccl_log)
-
-    # 更新节点哈希
-    node_hash_key = (receiver_node, 1)
-    nodeHash[node_hash_key] = nodeHash.get(node_hash_key, 0) + message_size
+    
+    # 临界区管理（如果启用MTP）
+    with CriticalSection() if hasattr(ns3, 'MtpInterface') else DummyContext():
+        # 检查预期接收哈希表
+        if key in expeRecvHash:
+            t2 = expeRecvHash[key]
+            nccl_log.writeLog(NcclLogLevel.DEBUG, 
+                             f"{sender_node} notify receiver: {receiver_node} message size: {message_size} t2.count: {t2.count} channel id: {flowTag.channel_id}")
+            
+            ehd = t2.fun_arg  # 假设已正确转换为Python对象
+            
+            if message_size == t2.count:
+                nccl_log.writeLog(NcclLogLevel.DEBUG, 
+                                 f"message_size = t2.count expeRecvHash.erase {sender_node} notify receiver: {receiver_node} message size: {message_size} channel_id {tag}")
+                expeRecvHash.pop(key)
+                
+                # 退出临界区（Python通过with语句自动管理）
+                
+                assert ehd.flowTag.current_flow_id == -1 and ehd.flowTag.child_flow_id == -1
+                ehd.flowTag = flowTag
+                t2.msg_handler(t2.fun_arg)
+                return  # 替代goto
+                
+            elif message_size > t2.count:
+                recvHash[key] = message_size - t2.count
+                nccl_log.writeLog(NcclLogLevel.DEBUG, 
+                                 f"message_size > t2.count expeRecvHash.erase {sender_node} notify receiver: {receiver_node} message size: {message_size} channel_id {tag}")
+                expeRecvHash.pop(key)
+                
+                # 退出临界区（Python通过with语句自动管理）
+                
+                assert ehd.flowTag.current_flow_id == -1 and ehd.flowTag.child_flow_id == -1
+                ehd.flowTag = flowTag
+                t2.msg_handler(t2.fun_arg)
+                return  # 替代goto
+                
+            else:
+                t2.count -= message_size
+                expeRecvHash[key] = t2
+                
+        else:
+            # 添加到接收者待处理队列
+            receiver_key = ((receiver_node, sender_node), tag)
+            receiver_pending_queue[receiver_key] = flowTag
+            
+            # 更新接收哈希表
+            if key not in recvHash:
+                recvHash[key] = message_size
+            else:
+                recvHash[key] += message_size
+    
+    # 第二部分临界区
+    with CriticalSection() if hasattr(ns3, 'MtpInterface') else DummyContext():
+        node_key = (receiver_node, 1)
+        if node_key not in nodeHash:
+            nodeHash[node_key] = message_size
+        else:
+            nodeHash[node_key] += message_size
 
 def _notify_receiver_core(key, message_size, flow_tag, nccl_log):
     if key in expeRecvHash:
         t2 = expeRecvHash[key]
         ehd = t2.fun_arg  # 假设为RecvPacketEventHadndlerData实例
-        nccl_log.writeLog("DEBUG", "%d notify recevier: %d message size: %d t2.count: %d channle id: %d",
+        nccl_log.write_log("DEBUG", "%d notify recevier: %d message size: %d t2.count: %d channle id: %d",
                          flow_tag.sender_node, flow_tag.receiver_node, message_size, t2.count, flow_tag.channel_id)
         
         if message_size == t2.count:
@@ -195,7 +205,7 @@ def _notify_receiver_core(key, message_size, flow_tag, nccl_log):
         recvHash[key] = recvHash.get(key, 0) + message_size
 
 def qp_finish(fout, q):
-    nccl_log = MockNcclLog()
+    nccl_log = MockNcclLog.get_instance()
     sid = ns3.ip_to_node_id(q.GetSip())  # 假设已实现ip_to_node_id绑定
     did = ns3.ip_to_node_id(q.GetDip())
     port = q.GetSport()
@@ -203,7 +213,7 @@ def qp_finish(fout, q):
     # 获取flowTag
     key = (port, (sid, did))
     if key not in sender_src_port_map:
-        nccl_log.writeLog("ERROR", "could not find the tag, there must be something wrong")
+        nccl_log.write_log("ERROR", "could not find the tag, there must be something wrong")
         sys.exit(-1)
     flow_tag = sender_src_port_map[key]
     del sender_src_port_map[key]
@@ -269,8 +279,8 @@ def setup_network(qp_finish_cb, send_finish_cb):
     receiver_if = ipv4.Assign(receiver_dev)
 
     # 记录全局IP映射
-    GlobalState.serverAddress[0] = sender_if.GetAddress(0)
-    GlobalState.serverAddress[1] = receiver_if.GetAddress(0)
+    serverAddress[0] = sender_if.GetAddress(0)
+    serverAddress[1] = receiver_if.GetAddress(0)
 
     # 配置路由
     ns3.Ipv4GlobalRoutingHelper.PopulateRoutingTables()
@@ -285,15 +295,15 @@ def main1(network_topo, network_conf):
     ns3.Simulator.Stop(ns3.Seconds(10.0))
 
     # 读取配置（示例简化）
-    GlobalState.pairRtt[0][1] = 1000000  # 1ms RTT（ns）
-    GlobalState.pairBw[0][1] = 10e9  # 10Gbps
-    GlobalState.maxBdp = 1000000  # 示例BDP值
+    pairRtt[0][1] = 1000000  # 1ms RTT（ns）
+    pairBw[0][1] = 10e9  # 10Gbps
+    maxBdp = 1000000  # 示例BDP值
 
     # 搭建网络
     setup_network(qp_finish, send_finish)
 
     # 示例发送请求
-    request = AstraSim.SendPacketEventHandlerData()
+    request = SendPacketEventHandlerData()
     request.flowTag.current_flow_id = 1
     request.flowTag.sender_node = 0
     request.flowTag.receiver_node = 1

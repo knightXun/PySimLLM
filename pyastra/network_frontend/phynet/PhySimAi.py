@@ -1,33 +1,17 @@
 from collections import deque
 
+from system.MockNcclLog import MockNcclLog
+
 class CallTask:
     def __init__(self, time, fun_ptr, fun_arg):
         self.time = time
         self.fun_ptr = fun_ptr
         self.fun_arg = fun_arg
 
-class MockNcclLog:
-    _instance = None
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            # 初始化日志级别映射（模拟C++枚举）
-            cls.NcclLogLevel = type('NcclLogLevel', (), {
-                'DEBUG': 'DEBUG',
-                'INFO': 'INFO',
-                'WARNING': 'WARNING',
-                'ERROR': 'ERROR'
-            })()
-        return cls._instance
-    
-    def writeLog(self, log_level, format_str, *args):
-        print(f"[{log_level}] {format_str % args}")
-
 class PhyNetSim:
     call_list = deque()
     tick = 0
-    _nccl_log = MockNcclLog()
+    _nccl_log = MockNcclLog.get_instance()
 
     @staticmethod
     def Now() -> float:
@@ -43,7 +27,7 @@ class PhyNetSim:
             # 移除并执行任务
             PhyNetSim.call_list.popleft()  # 等价于pop()
             
-            PhyNetSim._nccl_log.writeLog(
+            PhyNetSim._nccl_log.write_log(
                 PhyNetSim._nccl_log.NcclLogLevel.DEBUG,
                 "PhyNetSim::Run calltask begin tick %d",
                 PhyNetSim.tick
@@ -52,7 +36,7 @@ class PhyNetSim:
             # 执行任务函数
             calltask.fun_ptr(calltask.fun_arg)
             
-            PhyNetSim._nccl_log.writeLog(
+            PhyNetSim._nccl_log.write_log(
                 PhyNetSim._nccl_log.NcclLogLevel.DEBUG,
                 "PhyNetSim::Run calltask end tick %d",
                 PhyNetSim.tick
@@ -63,7 +47,7 @@ class PhyNetSim:
         time = PhyNetSim.tick + delay
         calltask = CallTask(time, fun_ptr, fun_arg)
         
-        PhyNetSim._nccl_log.writeLog(
+        PhyNetSim._nccl_log.write_log(
             PhyNetSim._nccl_log.NcclLogLevel.DEBUG,
             "PhyNetSim::Schedule calltask"
         )
@@ -72,8 +56,8 @@ class PhyNetSim:
 
     @staticmethod
     def Stop():
-        pass
+        return
 
     @staticmethod
     def Destory():
-        pass
+        return

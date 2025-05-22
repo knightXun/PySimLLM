@@ -1,79 +1,52 @@
 import sys
-import ns3
 from collections import deque
 import argparse
 import os
 from typing import Any, Dict, Tuple, Optional
 
-# 假设以下为AstraSim相关类的Python绑定（需根据实际情况补充）
-class AstraNetworkAPI:
-    def __init__(self, rank: int):
-        self.rank = rank
+from system.AstraParamParse import UserParam, ModeType
+from system.AstraNetworkAPI import AstraNetworkAPI
+from system.AstraNetworkAPI import sim_comm, sim_request, timespec_t
+from system.AstraMemoryAPI import AstraMemoryAPI
+from system.AstraParamParse import  UserParam
 
-class AstraMemoryAPI:
-    pass
+from common import node_num, switch_num, link_num, trace_num, nvswitch_num, gpus_per_server
+from common import gpu_type
+from common import NVswitchs
 
-class timespec_t:
-    def __init__(self):
-        self.time_val = 0.0
+import ns3
+from ns3.AstraSimNetwork import receiver_pending_queue
+from ns3.entry import expeRecvHash
+from ns3.entry import recvHash, sentHash
 
-class sim_comm:
-    pass
+# from AstraSim import AnaSim
+from system.Sys import Sys
+from system.RecvPacketEventHandlerData import RecvPacketEventHandlerData
+from system.MockNcclLog import MockNcclLog
+from system.AstraNetworkAPI  import ncclFlowTag
+from system.Common import GPUType
+from entry import send_flow
 
-class sim_request:
-    def __init__(self):
-        self.flowTag = None  # 假设flowTag是自定义类型
+import ns
 
-class RecvPacketEventHadndlerData:
-    def __init__(self):
-        self.event = None  # 假设event是EventType枚举
-        self.flowTag = None  # 假设flowTag是ncclFlowTag类型
-
-class ncclFlowTag:
-    def __init__(self):
-        self.tag_id = 0
-        self.channel_id = 0
-        self.child_flow_id = -1
-        self.current_flow_id = -1
-
-class MockNcclLog:
-    _instance = None
-    LOG_LEVEL_INFO = "INFO"
-    LOG_LEVEL_DEBUG = "DEBUG"
-
-    @classmethod
-    def getInstance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    def set_log_name(self, name: str):
-        pass
-
-    def writeLog(self, level: str, msg: str, *args):
-        print(msg % args)
-
-# 全局变量（需根据实际情况初始化）
-receiver_pending_queue: Dict[Tuple[Tuple[int, int], int], ncclFlowTag] = {}
-node_num: int = 0
-switch_num: int = 0
-link_num: int = 0
-trace_num: int = 0
-nvswitch_num: int = 0
-gpus_per_server: int = 0
-GPUType = int  # 假设为枚举类型
-NVswitchs: list[int] = []
-
+class sim_event:
+    def __init__(self, buffer=None, count=0, type=0, dst=0, tag=0, fnType=""):
+        self.buffer = buffer    
+        self.count = count     
+        self.type = type       
+        self.dst = dst        
+        self.tag = tag     
+        self.fnType = fnType 
 
 class ASTRASimNetwork(AstraNetworkAPI):
     def __init__(self, rank: int, npu_offset: int = 0):
         super().__init__(rank)
         self.npu_offset = npu_offset
         self.sim_event_queue = deque()
-        self.nodeHash: Dict[Tuple[int, int], int] = {}  # 假设存储(node_id, direction) -> count
-        self.sentHash: Dict[Tuple[int, Tuple[int, int]], Any] = {}  # 假设存储(tag, (src, dest)) -> task
-        self.recvHash: Dict[Tuple[int, Tuple[int, int]], int] = {}  # 假设存储(tag, (src, dest)) -> count
-        self.expeRecvHash: Dict[Tuple[int, Tuple[int, int]], Any] = {}  # 假设存储(tag, (src, dest)) -> task
+        self.nodeHash: Dict[Tuple[int, int], int] = {}  
+        self.sentHash: Dict[Tuple[int, Tuple[int, int]], Any] = {} 
+        self.recvHash: Dict[Tuple[int, Tuple[int, int]], int] = {} 
+        self.expeRecvHash: Dict[Tuple[int, Tuple[int, int]], Any] = {} 
 
     def sim_comm_size(self, comm: sim_comm, size: list[int]) -> int:
         return 0
@@ -103,7 +76,6 @@ class ASTRASimNetwork(AstraNetworkAPI):
         return timeSpec
 
     def sim_schedule(self, delta: timespec_t, fun_ptr: callable, fun_arg: Any) -> None:
-        # 定义任务结构（用字典模拟C++的task1）
         task = {
             "type": 2,
             "fun_arg": fun_arg,
@@ -126,13 +98,13 @@ class ASTRASimNetwork(AstraNetworkAPI):
         # 模拟C++中的临界区（Python中用简单锁替代）
         key = (tag, (task["src"], task["dest"]))
         self.sentHash[key] = task
-        # 假设SendFlow是ns3的函数（需根据实际实现）
-        SendFlow(self.rank, dst, count, msg_handler, fun_arg, tag, request)
+
+        send_flow(self.rank, dst, count, msg_handler, fun_arg, tag, request)
         return 0
 
     def sim_recv(self, buffer: Any, count: int, type: int, src: int, tag: int,
                  request: sim_request, msg_handler: callable, fun_arg: Any) -> int:
-        NcclLog = MockNcclLog.getInstance()
+        NcclLog = MockNcclLog.get_instance()
         flowTag = request.flowTag
         src += self.npu_offset
         task = {
@@ -147,7 +119,7 @@ class ASTRASimNetwork(AstraNetworkAPI):
         event = ehd.event
         tag = ehd.flowTag.tag_id
 
-        NcclLog.writeLog(MockNcclLog.LOG_LEVEL_DEBUG,
+        NcclLog.write_log(MockNcclLog.LOG_LEVEL_DEBUG,
                         "接收事件注册 src %d sim_recv on rank %d tag_id %d channdl id %d",
                         src, self.rank, tag, ehd.flowTag.channel_id)
 
@@ -171,12 +143,12 @@ class ASTRASimNetwork(AstraNetworkAPI):
         else:
             if key not in self.expeRecvHash:
                 self.expeRecvHash[key] = task
-                NcclLog.writeLog(MockNcclLog.LOG_LEVEL_DEBUG,
+                NcclLog.write_log(MockNcclLog.LOG_LEVEL_DEBUG,
                                 "网络包后到，先进行注册 recvHash do not find expeRecvHash.new make src %d dest %d t.count: %d channel_id %d current_flow_id %d",
                                 task["src"], task["dest"], task["count"], tag, flowTag.current_flow_id)
             else:
                 existing_task = self.expeRecvHash[key]
-                NcclLog.writeLog(MockNcclLog.LOG_LEVEL_DEBUG,
+                NcclLog.write_log(MockNcclLog.LOG_LEVEL_DEBUG,
                                 "网络包后到，重复注册 recvHash do not find expeRecvHash.add make src %d dest %d expecount: %d t.count: %d tag_id %d current_flow_id %d",
                                 task["src"], task["dest"], existing_task["count"], task["count"], tag, flowTag.current_flow_id)
         return 0
@@ -197,8 +169,8 @@ def user_param_parse() -> argparse.Namespace:
 def main():
     # 初始化日志
     MockNcclLog().set_log_name("SimAI.log")
-    NcclLog = MockNcclLog.getInstance()
-    NcclLog.writeLog(MockNcclLog.LOG_LEVEL_INFO, "init SimAI.log")
+    NcclLog = MockNcclLog.get_instance()
+    NcclLog.write_log(MockNcclLog.LOG_LEVEL_INFO, "init SimAI.log")
 
     # 解析参数
     args = user_param_parse()
@@ -235,8 +207,7 @@ def main():
 
     for j in range(nodes_num):
         networks[j] = ASTRASimNetwork(j, 0)
-        # 假设AstraSim::Sys构造函数参数与C++版本一致（需根据实际调整）
-        systems[j] = AstraSim.Sys(
+        systems[j] = Sys(
             networks[j],
             None,
             j,
@@ -263,7 +234,6 @@ def main():
         systems[j].nvswitch_id = node2nvswitch[j]
         systems[j].num_gpus = nodes_num - nvswitch_num
 
-    # 启动工作负载
     for i in range(nodes_num):
         if systems[i] is not None and systems[i].workload is not None:
             systems[i].workload.fire()

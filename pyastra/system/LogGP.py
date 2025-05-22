@@ -1,7 +1,7 @@
 import enum
 from collections import deque
 
-from Common import EventType
+from Common import EventType, BusType
 from Callable import Callable
 from MemBus import MemBus
 from MemMovRequest import MemMovRequest

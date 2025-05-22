@@ -1,4 +1,3 @@
-# 假设这些类已经在其他地方定义好了
 from typing import List
 
 from Callable import Callable

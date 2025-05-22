@@ -11,7 +11,7 @@ from StreamStat import StreamStat
 from Common import ComType, EventType, StreamState
 
 from system.topology.RingTopology import RingTopology
-from AstraNetworkAPI import sim_request
+from AstraNetworkAPI import sim_request, req_type_e
 from system.MockNcclChannel import *
 from system.SendPacketEventHandlerData import SendPacketEventHandlerData
 from PacketBundle import PacketBundle
@@ -197,7 +197,7 @@ class HalvingDoubling(Algorithm):
             "srcRank": self.id,
             "dstRank": packet.preferred_dest,
             "tag": self.stream.stream_num,
-            "reqType": "UINT8",
+            "reqType": req_type_e.UINT8,
             "vnet": self.stream.current_queue_id,
             "layerNum": self.layer_num
         }
@@ -205,7 +205,7 @@ class HalvingDoubling(Algorithm):
             0,
             Sys.dummy_data,
             packet.msg_size,
-            "UINT8",
+            req_type_e.UINT8,
             packet.preferred_dest,
             self.stream.stream_num,
             snd_req,
@@ -227,7 +227,7 @@ class HalvingDoubling(Algorithm):
             0,
             Sys.dummy_data,
             packet.msg_size,
-            "UINT8",
+            req_type_e.UINT8,
             packet.preferred_src,
             self.stream.stream_num,
             rcv_req,

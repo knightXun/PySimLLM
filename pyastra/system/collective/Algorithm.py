@@ -7,10 +7,10 @@ from system.Common import ComType
 
 class Algorithm(Callable):
     class Name(Enum):
-        Ring = 1
-        DoubleBinaryTree = 2
-        AllToAll = 3
-        HalvingDoubling = 4
+        Ring = 0
+        DoubleBinaryTree = 1
+        AllToAll = 2
+        HalvingDoubling = 3
 
     def __init__(self, layer_num):
         self.name = None

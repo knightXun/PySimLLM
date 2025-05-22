@@ -82,7 +82,7 @@ class MockNcclLog:
 if __name__ == "__main__":
     MockNcclLog.set_log_name("mock_nccl.log")
 
-    logger = MockNcclLog()
+    logger = MockNcclLog.get_instance()
 
     logger.write_log(NcclLogLevel.DEBUG, "调试信息：{}", "变量值")
     logger.write_log(NcclLogLevel.INFO, "正常信息：线程{}启动", "主线程")

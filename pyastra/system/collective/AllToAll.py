@@ -32,7 +32,7 @@ class AllToAll(Ring):
         self.current_sender = id
 
     def get_non_zero_latency_packets(self):
-        if self.logicalTopology.dimension != Dimension.Local:
+        if self.logicalTopology.dimension != RingTopology.Dimension.Local:
             return self.parallel_reduce * 1
         else:
             return (self.nodes_in_ring - 1) * self.parallel_reduce * 1

@@ -6,19 +6,22 @@ from AstraMemoryAPI import AstraMemoryAPI
 from AstraSimDataAPI import AstraSimDataAPI
 
 
-
+class sim_comm:
+    def __init__(self, comm_name: str = ""):
+        self.comm_name = comm_name
+        
 class time_type_e(Enum):
-    SE = 1
-    MS = 2
-    US = 3
-    NS = 4
-    FS = 5
+    SE = 0
+    MS = 1
+    US = 2
+    NS = 3
+    FS = 4
 
 
 class req_type_e(Enum):
-    UINT8 = 1
-    BFLOAT16 = 2
-    FP32 = 3
+    UINT8 = 0
+    BFLOAT16 = 1
+    FP32 = 2
 
 
 class ncclFlowTag:
@@ -64,10 +67,10 @@ class MetaData:
 
 class AstraNetworkAPI(metaclass=abc.ABCMeta):
     class BackendType(Enum):
-        NotSpecified = 1
-        Garnet = 2
-        NS3 = 3
-        Analytical = 4
+        NotSpecified = 0
+        Garnet = 1
+        NS3 = 2
+        Analytical = 3
 
     def __init__(self, rank):
         self.rank = rank

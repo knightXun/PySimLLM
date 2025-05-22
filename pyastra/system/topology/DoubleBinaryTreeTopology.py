@@ -13,8 +13,9 @@ class DoubleBinaryTreeTopology(ComplexLogicalTopology):
         self.counter = 0
 
     def __del__(self):
-        del self.DBMAX
-        del self.DBMIN
+        # del self.DBMAX
+        # del self.DBMIN
+        return
 
     def get_topology(self):
         if self.counter % 2 == 0:

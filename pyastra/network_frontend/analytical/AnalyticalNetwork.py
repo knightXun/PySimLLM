@@ -1,24 +1,26 @@
-# 假设AstraSim模块已正确导入并包含相关基础类定义
-import AstraSim
+from system.AstraNetworkAPI import AstraNetworkAPI
+from system.AstraNetworkAPI import sim_comm, sim_request, timespec_t
+from system.AstraMemoryAPI import AstraMemoryAPI
 
-# 外部全局变量（对应C++中的extern声明）
-receiver_pending_queue = {}  # 键类型：tuple[tuple[tuple[int, int], int], ...]
-expeRecvHash = {}            # 键类型：tuple[int, tuple[int, int]]
-recvHash = {}                # 键类型：tuple[int, tuple[int, int]]
-sentHash = {}                # 键类型：tuple[int, tuple[int, int]]
-nodeHash = {}                # 键类型：tuple[int, int]
-local_rank = 0               # 全局rank变量
+from ns3.AstraSimNetwork import receiver_pending_queue
+from ns3.common import node_num, switch_num, link_num, trace_num, nvswitch_num, gpus_per_server
+from ns3.common import gpu_type
+from ns3.common import NVswitchs
 
-class AnalyticalNetWork(AstraSim.AstraNetworkAPI):
+from ns3.entry import expeRecvHash
+from ns3.entry import recvHash, sentHash, nodeHash, local_rank
+
+from AstraSim import AnaSim
+
+class AnalyticalNetWork(AstraNetworkAPI):
     def __init__(self, _local_rank: int):
         super().__init__(_local_rank)
-        self.npu_offset = 0  # 私有成员变量
+        self.npu_offset = 0  
 
     def __del__(self):
-        # 对应C++析构函数（Python自动垃圾回收，通常无需显式定义）
         pass
 
-    def sim_comm_size(self, comm: AstraSim.sim_comm, size: list) -> int:
+    def sim_comm_size(self, comm: sim_comm, size: list) -> int:
         # size参数用列表模拟指针传递（Python中列表是可变对象）
         return 0
 
@@ -28,25 +30,25 @@ class AnalyticalNetWork(AstraSim.AstraNetworkAPI):
     def sim_time_resolution(self) -> float:
         return 0.0
 
-    def sim_init(self, MEM: AstraSim.AstraMemoryAPI) -> int:
+    def sim_init(self, MEM: AstraMemoryAPI) -> int:
         return 0
 
-    def sim_get_time(self) -> AstraSim.timespec_t:
-        time_spec = AstraSim.timespec_t()
-        time_spec.time_val = AstraSim.AnaSim.Now()
+    def sim_get_time(self) -> timespec_t:
+        time_spec = timespec_t()
+        time_spec.time_val = AnaSim.Now()
         return time_spec
 
-    def sim_schedule(self, delta: AstraSim.timespec_t, fun_ptr, fun_arg) -> None:
-        AstraSim.AnaSim.Schedule(delta.time_val, fun_ptr, fun_arg)
+    def sim_schedule(self, delta: timespec_t, fun_ptr, fun_arg) -> None:
+        AnaSim.Schedule(delta.time_val, fun_ptr, fun_arg)
 
     def sim_send(
         self,
         buffer,
         count: int,
-        type_: int,  # 避免与Python内置type冲突
+        type_: int, 
         dst: int,
         tag: int,
-        request: AstraSim.sim_request,
+        request: sim_request,
         msg_handler,
         fun_arg
     ) -> int:
@@ -59,7 +61,7 @@ class AnalyticalNetWork(AstraSim.AstraNetworkAPI):
         type_: int,  # 避免与Python内置type冲突
         src: int,
         tag: int,
-        request: AstraSim.sim_request,
+        request: sim_request,
         msg_handler,
         fun_arg
     ) -> int:
