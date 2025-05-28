@@ -4,7 +4,6 @@ import os
 import threading
 from collections import defaultdict
 import ns3
-import ns3 
 
 from analytical.AstraSim import AnaSim
 from system.MockNcclLog import MockNcclLog, ncclFlowTag, NcclLogLevel

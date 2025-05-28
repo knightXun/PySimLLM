@@ -1243,7 +1243,7 @@ class Layer:
 
         if generator.id == 0:
             print(
-                f"info: {weight_grad_comm_type.name.lower()}-{comtype_to_str(weight_grad_comm_type)} weight grad collective issued for layer: {id} with size: {self.weight_grad_comm_size}",
+                f"info: {weight_grad_comm_type.name.lower()}-{weight_grad_comm_type} weight grad collective issued for layer: {id} with size: {self.weight_grad_comm_size}",
             )
             self.print_involved_dimensions(self.weight_grad_comm_involved_dimensions)
 
