@@ -179,6 +179,7 @@ class Workload(Callable):
         print("*************************")
         print(f"all passes finished at time: {self.generator.boostedTick()}, id of first layer: {self.layers[0].id}")
         self.generator.NI.pass_front_end_report(astraSimDataAPI)
+
         if self.seprate_log:
             dims = []
             for i in range(len(self.generator.scheduler_unit.usage)):

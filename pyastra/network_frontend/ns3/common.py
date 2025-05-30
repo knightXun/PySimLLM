@@ -20,7 +20,7 @@ from ns import ns
 
 # NS_LOG_COMPONENT_DEFINE("GENERIC_SIMULATION");
 
-ns.LogComponentEnable("GENERIC_SIMULATION", ns.LOG_LEVEL_INFO)
+# ns.LogComponentEnable("GENERIC_SIMULATION", ns.LOG_LEVEL_INFO)
 
 PGO_TRAINING = False
 PATH_TO_PGO_CONFIG = "path_to_pgo_config"
@@ -224,17 +224,28 @@ def CalculateRoute(host):
                 if next_node.GetNodeType() in (1, 2):
                     q.append(next_node)
             via_nvswitch = False
-            if d + 1 == dis.get(next_node, float('inf')):
-                for x in nextHop[next_node][host]:
-                    if x.GetNodeType() == 2:
-                        via_nvswitch = True
-                if not via_nvswitch:
-                    if now.GetNodeType() == 2:
-                        nextHop[next_node][host].clear()
-                    nextHop[next_node][host].append(now)
-                elif via_nvswitch and now.GetNodeType() == 2:
-                    nextHop[next_node][host].append(now)
-                if next_node.GetNodeType() == 0 and not nextHop[next_node][now]:
+
+            # import pdb; pdb.set_trace()
+            
+            if next_node in dis and d + 1 == dis[next_node]:
+                if next_node in nextHop and host in nextHop[next_node]:
+                    for x in nextHop[next_node][host]:
+                        if x.GetNodeType() == 2:
+                            via_nvswitch = True
+
+                    if not via_nvswitch:
+                        if now.GetNodeType() == 2:
+                            nextHop[next_node][host].clear()
+                        nextHop[next_node][host].append(now)
+                    elif via_nvswitch and now.GetNodeType() == 2:
+                        nextHop[next_node][host].append(now)
+
+                elif next_node.GetNodeType() == 0:
+                    if next_node not in nextHop:
+                        nextHop[next_node] = {}
+                    if now not in nextHop[next_node]:
+                        nextHop[next_node][now] = [] 
+
                     nextHop[next_node][now].append(now)
                     pairBw[next_node.GetId()][now.GetId()] = pairBw[now.GetId()][next_node.GetId()] = iface.bw
     
@@ -242,10 +253,18 @@ def CalculateRoute(host):
         pairDelay[node] = {}
         pairDelay[node][host] = dly
     for node, tx_dly in txDelay.items():
-        pairTxDelay[node] = {}
+
+        if node not in pairTxDelay:
+            pairTxDelay[node] = {}
+
         pairTxDelay[node][host] = tx_dly
+
+    # import pdb; pdb.set_trace()
+
     for node, b in bw.items():
-        pairBw[node.GetId()] = {}
+        if node.GetId() not in pairBw:
+            pairBw[node.GetId()] = {}
+
         pairBw[node.GetId()][host.GetId()] = b
 
 def CalculateRoutes(nodes):
@@ -322,11 +341,14 @@ def TakeDownLink(nodes, a, b):
     for i in range(nodes.GetN()):
         node = nodes.Get(i)
         if node.GetNodeType() == 1:
-            node.GetObject(ns.SwitchNode).ClearTable()
+            # node.GetObject(ns.SwitchNode).ClearTable()
+            node.ClearTable()
         elif node.GetNodeType() == 2:
-            node.GetObject(ns.NVSwitchNode).ClearTable()
+            # node.GetObject(ns.NVSwitchNode).ClearTable()
+            node.ClearTable()
         else:
-            node.GetObject(ns.RdmaDriver).m_rdma.ClearTable()
+            # node.GetObject(ns.RdmaDriver).m_rdma.ClearTable()
+            node.m_rdma.ClearTable()
     a.GetDevice(nbr2if[a][b].idx).GetObject(ns.QbbNetDevice).TakeDown()
     b.GetDevice(nbr2if[b][a].idx).GetObject(ns.QbbNetDevice).TakeDown()
     SetRoutingEntries()
@@ -343,209 +365,208 @@ def get_nic_rate(nodes):
     for i in range(nodes.GetN()):
         node = nodes.Get(i)
         if node.GetNodeType() == 0:
-            return node.GetDevice(1).GetObject(ns.QbbNetDevice).GetDataRate().GetBitRate()
+            return node.GetDevice(1).GetDataRate().GetBitRate()
     return 0
 
 def ReadConf(network_topo, network_conf):
     global topology_file
     topology_file = network_topo
+
     with open(network_conf, "r") as conf:
-        # while True:
-        line = conf.readline()
-        line = line.strip()
-        if not line or line.startswith('#'): pass
-            # continue
-        parts = line.split()
-        key = parts[0]
-        values = parts[1:]
-        if key == "ENABLE_QCN":
-            global enable_qcn
-            enable_qcn = int(values[0])
-        elif key == "USE_DYNAMIC_PFC_THRESHOLD":
-            global use_dynamic_pfc_threshold
-            use_dynamic_pfc_threshold = int(values[0])
-        elif key == "CLAMP_TARGET_RATE":
-            global clamp_target_rate
-            clamp_target_rate = int(values[0])
-        elif key == "PAUSE_TIME":
-            global pause_time
-            pause_time = float(values[0])
-        elif key == "DATA_RATE":
-            global data_rate
-            data_rate = ' '.join(values)
-        elif key == "LINK_DELAY":
-            global link_delay
-            link_delay = ' '.join(values)
-        elif key == "PACKET_PAYLOAD_SIZE":
-            global packet_payload_size
-            packet_payload_size = int(values[0])
-        elif key == "L2_CHUNK_SIZE":
-            global l2_chunk_size
-            l2_chunk_size = int(values[0])
-        elif key == "L2_ACK_INTERVAL":
-            global l2_ack_interval
-            l2_ack_interval = int(values[0])
-        elif key == "L2_BACK_TO_ZERO":
-            global l2_back_to_zero
-            l2_back_to_zero = int(values[0])
-        elif key == "FLOW_FILE":
-            global flow_file
-            flow_file = values[0]
+        lines = conf.readlines() 
+        for line in lines:
+            line = line.strip()
+            if len(line) == 0 or line.startswith('#'): continue
 
-        elif key == "TRACE_FILE":
-            global trace_file
-            trace_file = values[0]
-        elif key == "TRACE_OUTPUT_FILE":
-            global trace_output_file
-            trace_output_file = values[0]
-        elif key == "SIMULATOR_STOP_TIME":
-            global simulator_stop_time
-            simulator_stop_time = float(values[0])
-        elif key == "ALPHA_RESUME_INTERVAL":
-            global alpha_resume_interval
-            alpha_resume_interval = float(values[0])
-        elif key == "RP_TIMER":
-            global rp_timer
-            rp_timer = float(values[0])
-        elif key == "EWMA_GAIN":
-            global ewma_gain
-            ewma_gain = float(values[0])
-        elif key == "FAST_RECOVERY_TIMES":
-            global fast_recovery_times
-            fast_recovery_times = int(values[0])
-        elif key == "RATE_AI":
-            global rate_ai
-            rate_ai = values[0]
-        elif key == "RATE_HAI":
-            global rate_hai
-            rate_hai = values[0]
-        elif key == "ERROR_RATE_PER_LINK":
-            global error_rate_per_link
-            error_rate_per_link = float(values[0])
-        elif key == "CC_MODE":
-            global cc_mode
-            cc_mode = int(values[0])
-        elif key == "RATE_DECREASE_INTERVAL":
-            global rate_decrease_interval
-            rate_decrease_interval = float(values[0])
-        elif key == "MIN_RATE":
-            global min_rate
-            min_rate = values[0]
-        elif key == "FCT_OUTPUT_FILE":
-            global fct_output_file
-            fct_output_file = values[0]
-        elif key == "HAS_WIN":
-            global has_win
-            has_win = int(values[0])
-        elif key == "GLOBAL_T":
-            global global_t
-            global_t = 1  # 强制设为 1（原 C++ 代码行为）
-        elif key == "MI_THRESH":
-            global mi_thresh
-            mi_thresh = int(values[0])
-        elif key == "VAR_WIN":
-            global var_win
-            var_win = int(values[0])
-        elif key == "FAST_REACT":
-            global fast_react
-            fast_react = int(values[0])
-        elif key == "U_TARGET":
-            global u_target
-            u_target = float(values[0])
-        elif key == "INT_MULTI":
-            global int_multi
-            int_multi = int(values[0])
-        elif key == "RATE_BOUND":
-            global rate_bound
-            rate_bound = bool(values[0])
-        elif key == "ACK_HIGH_PRIO":
-            global ack_high_prio
-            ack_high_prio = int(values[0])
-        elif key == "DCTCP_RATE_AI":
-            global dctcp_rate_ai
-            dctcp_rate_ai = values[0]
-        elif key == "NIC_TOTAL_PAUSE_TIME":
-            global nic_total_pause_time
-            nic_total_pause_time = float(values[0])
-        elif key == "PFC_OUTPUT_FILE":
-            global pfc_output_file
-            pfc_output_file = values[0]
-        elif key == "LINK_DOWN":
-            global link_down_time
-            global link_down_A
-            global link_down_B
-            link_down_time = int(values[0])
-            link_down_A = int(values[1])
-            link_down_B = int(values[2])
-        elif key == "ENABLE_TRACE":
-            global enable_trace
-            enable_trace = int(values[0])
-        elif key == "KMAX_MAP":
-            n_k = int(values[0])
-            global rate2kmax 
-            for i in range(n_k):
-                rate2kmax[ int( values[ i*2 + 1 ] ) ] = int( values[ i*2 + 2 ] )
-        elif key == "KMIN_MAP":
-            n_k = int(values[0]) 
-            global rate2kmin 
-            for i in range(n_k):
-                rate2kmin[ int( values[ i*2 + 1 ] ) ] = int( values[ i*2 + 2 ] )            
-        elif key == "PMAX_MAP":
-            n_k = int(values[0]) 
-            global rate2pmax 
-            for i in range(n_k):
-                rate2pmax[ int( values[ i*2 + 1 ] ) ] = float( values[ i*2 + 2 ] )   
-            
-            import pdb; pdb.set_trace()
-        elif key == "BUFFER_SIZE":
-            global buffer_size
-            buffer_size = int(values[0])
-        elif key == "QLEN_MON_FILE":
-            global qlen_mon_file
-            qlen_mon_file = values[0]
-            qlen_mon_file = get_output_file_name(network_conf, qlen_mon_file);
-        elif key == "BW_MON_FILE":
-            global bw_mon_file
-            bw_mon_file = values[0]
-            bw_mon_file = get_output_file_name(network_conf, bw_mon_file);
-        elif key == "RATE_MON_FILE":
-            global rate_mon_file
-            rate_mon_file = values[0]
-            rate_mon_file = get_output_file_name(network_conf, rate_mon_file);
-        elif key == "CNP_MON_FILE":
-            global cnp_mon_file
-            cnp_mon_file = values[0]
-            cnp_mon_file = get_output_file_name(network_conf, cnp_mon_file);
-        elif key == "MON_START":
-            global mon_start
-            mon_start = int(values[0])
-        elif key == "MON_END":
-            global mon_end
-            mon_end = int(values[0])
-        elif key == "QP_MON_INTERVAL":
-            global qp_mon_interval
-            qp_mon_interval = int(values[0])
-        elif key == "BW_MON_INTERVAL":
-            global bw_mon_interval
-            bw_mon_interval = int(values[0])
-        elif key == "QLEN_MON_INTERVAL":
-            global qlen_mon_interval
-            qlen_mon_interval = int(values[0])
-        elif key == "MULTI_RATE":
-            global multi_rate
-            multi_rate = ( int(values[0]) == 0 )
-        elif key == "SAMPLE_FEEDBACK":
-            global sample_feedback
-            sample_feedback = ( int(values[0]) == 0 )
-        elif key == "PINT_LOG_BASE":
-            global pint_log_base
-            pint_log_base = float(values[0])
-        elif key == "PINT_PROB":
-            global pint_prob
-            pint_prob = float(values[0])
-        else:
-            pass
+            parts = line.split()
+            key = parts[0]
+            values = parts[1:]
+            if key == "ENABLE_QCN":
+                global enable_qcn
+                enable_qcn = int(values[0])
+            elif key == "USE_DYNAMIC_PFC_THRESHOLD":
+                global use_dynamic_pfc_threshold
+                use_dynamic_pfc_threshold = int(values[0])
+            elif key == "CLAMP_TARGET_RATE":
+                global clamp_target_rate
+                clamp_target_rate = int(values[0])
+            elif key == "PAUSE_TIME":
+                global pause_time
+                pause_time = float(values[0])
+            elif key == "DATA_RATE":
+                global data_rate
+                data_rate = ' '.join(values)
+            elif key == "LINK_DELAY":
+                global link_delay
+                link_delay = ' '.join(values)
+            elif key == "PACKET_PAYLOAD_SIZE":
+                global packet_payload_size
+                packet_payload_size = int(values[0])
+            elif key == "L2_CHUNK_SIZE":
+                global l2_chunk_size
+                l2_chunk_size = int(values[0])
+            elif key == "L2_ACK_INTERVAL":
+                global l2_ack_interval
+                l2_ack_interval = int(values[0])
+            elif key == "L2_BACK_TO_ZERO":
+                global l2_back_to_zero
+                l2_back_to_zero = int(values[0])
+            elif key == "FLOW_FILE":
+                global flow_file
+                flow_file = values[0]
 
+            elif key == "TRACE_FILE":
+                global trace_file
+                trace_file = values[0]
+            elif key == "TRACE_OUTPUT_FILE":
+                global trace_output_file
+                trace_output_file = values[0]
+            elif key == "SIMULATOR_STOP_TIME":
+                global simulator_stop_time
+                simulator_stop_time = float(values[0])
+            elif key == "ALPHA_RESUME_INTERVAL":
+                global alpha_resume_interval
+                alpha_resume_interval = float(values[0])
+            elif key == "RP_TIMER":
+                global rp_timer
+                rp_timer = float(values[0])
+            elif key == "EWMA_GAIN":
+                global ewma_gain
+                ewma_gain = float(values[0])
+            elif key == "FAST_RECOVERY_TIMES":
+                global fast_recovery_times
+                fast_recovery_times = int(values[0])
+            elif key == "RATE_AI":
+                global rate_ai
+                rate_ai = values[0]
+            elif key == "RATE_HAI":
+                global rate_hai
+                rate_hai = values[0]
+            elif key == "ERROR_RATE_PER_LINK":
+                global error_rate_per_link
+                error_rate_per_link = float(values[0])
+            elif key == "CC_MODE":
+                global cc_mode
+                cc_mode = int(values[0])
+            elif key == "RATE_DECREASE_INTERVAL":
+                global rate_decrease_interval
+                rate_decrease_interval = float(values[0])
+            elif key == "MIN_RATE":
+                global min_rate
+                min_rate = values[0]
+            elif key == "FCT_OUTPUT_FILE":
+                global fct_output_file
+                fct_output_file = values[0]
+            elif key == "HAS_WIN":
+                global has_win
+                has_win = int(values[0])
+            elif key == "GLOBAL_T":
+                global global_t
+                global_t = 1  # 强制设为 1（原 C++ 代码行为）
+            elif key == "MI_THRESH":
+                global mi_thresh
+                mi_thresh = int(values[0])
+            elif key == "VAR_WIN":
+                global var_win
+                var_win = int(values[0])
+            elif key == "FAST_REACT":
+                global fast_react
+                fast_react = int(values[0])
+            elif key == "U_TARGET":
+                global u_target
+                u_target = float(values[0])
+            elif key == "INT_MULTI":
+                global int_multi
+                int_multi = int(values[0])
+            elif key == "RATE_BOUND":
+                global rate_bound
+                rate_bound = bool(values[0])
+            elif key == "ACK_HIGH_PRIO":
+                global ack_high_prio
+                ack_high_prio = int(values[0])
+            elif key == "DCTCP_RATE_AI":
+                global dctcp_rate_ai
+                dctcp_rate_ai = values[0]
+            elif key == "NIC_TOTAL_PAUSE_TIME":
+                global nic_total_pause_time
+                nic_total_pause_time = float(values[0])
+            elif key == "PFC_OUTPUT_FILE":
+                global pfc_output_file
+                pfc_output_file = values[0]
+            elif key == "LINK_DOWN":
+                global link_down_time
+                global link_down_A
+                global link_down_B
+                link_down_time = int(values[0])
+                link_down_A = int(values[1])
+                link_down_B = int(values[2])
+            elif key == "ENABLE_TRACE":
+                global enable_trace
+                enable_trace = int(values[0])
+            elif key == "KMAX_MAP":
+                n_k = int(values[0])
+                global rate2kmax 
+                for i in range(n_k):
+                    rate2kmax[ int( values[ i*2 + 1 ] ) ] = int( values[ i*2 + 2 ] )
+            elif key == "KMIN_MAP":
+                n_k = int(values[0]) 
+                global rate2kmin 
+                for i in range(n_k):
+                    rate2kmin[ int( values[ i*2 + 1 ] ) ] = int( values[ i*2 + 2 ] )            
+            elif key == "PMAX_MAP":
+                n_k = int(values[0]) 
+                global rate2pmax 
+                for i in range(n_k):
+                    rate2pmax[ int( values[ i*2 + 1 ] ) ] = float( values[ i*2 + 2 ] )
+            elif key == "BUFFER_SIZE":
+                global buffer_size
+                buffer_size = int(values[0])
+            elif key == "QLEN_MON_FILE":
+                global qlen_mon_file
+                qlen_mon_file = values[0]
+                qlen_mon_file = get_output_file_name(network_conf, qlen_mon_file);
+            elif key == "BW_MON_FILE":
+                global bw_mon_file
+                bw_mon_file = values[0]
+                bw_mon_file = get_output_file_name(network_conf, bw_mon_file);
+            elif key == "RATE_MON_FILE":
+                global rate_mon_file
+                rate_mon_file = values[0]
+                rate_mon_file = get_output_file_name(network_conf, rate_mon_file);
+            elif key == "CNP_MON_FILE":
+                global cnp_mon_file
+                cnp_mon_file = values[0]
+                cnp_mon_file = get_output_file_name(network_conf, cnp_mon_file);
+            elif key == "MON_START":
+                global mon_start
+                mon_start = int(values[0])
+            elif key == "MON_END":
+                global mon_end
+                mon_end = int(values[0])
+            elif key == "QP_MON_INTERVAL":
+                global qp_mon_interval
+                qp_mon_interval = int(values[0])
+            elif key == "BW_MON_INTERVAL":
+                global bw_mon_interval
+                bw_mon_interval = int(values[0])
+            elif key == "QLEN_MON_INTERVAL":
+                global qlen_mon_interval
+                qlen_mon_interval = int(values[0])
+            elif key == "MULTI_RATE":
+                global multi_rate
+                multi_rate = ( int(values[0]) == 0 )
+            elif key == "SAMPLE_FEEDBACK":
+                global sample_feedback
+                sample_feedback = ( int(values[0]) == 0 )
+            elif key == "PINT_LOG_BASE":
+                global pint_log_base
+                pint_log_base = float(values[0])
+            elif key == "PINT_PROB":
+                global pint_prob
+                pint_prob = float(values[0])
+            else:
+                pass
+    
     return True
 
 def SetConfig():
@@ -576,6 +597,16 @@ def SetConfig():
         ns.IntHeader.pint_bytes = ns.Pint.get_n_bytes()
         print(f"PINT bits: {ns.Pint.get_n_bits()} bytes: {ns.Pint.get_n_bytes()}")
 
+ns.cppyy.cppdef("""
+            using namespace ns3;
+
+            Callback<void,Ptr<const Packet>,const Address&,const Address&>
+            make_sinktrace_callback(void(*func)(Ptr<const Packet>, const Address&,const Address&))
+            {
+                return MakeCallback(func);
+            }
+        """)
+
 
 def SetupNetwork(qp_finish, send_finish):
     global topof, flowf, tracef, node_num, gpus_per_server, nvswitch_num, switch_num, link_num, gpu_type, flow_num, trace_num
@@ -584,6 +615,7 @@ def SetupNetwork(qp_finish, send_finish):
     global trace_file
     global serverAddress
     global n
+    global rate2kmax, rate2kmin, rate2pmax
 
     topof = open(topology_file, "r")
     
@@ -634,29 +666,24 @@ def SetupNetwork(qp_finish, send_finish):
         sid = gpus[i + nvswitch_num]
         node_type[sid] = 1
 
-    # n = ns.NodeContainer()
-    # n.Create(node_num)
     for i in range(node_num):
         if node_type[i] == 0:
-            a = ns.Node()
+            a = ns.CreateObject[ns.Node]()
             n.Add(a)
         elif node_type[i] == 1:
-            sw = ns.SwitchNode()
-            # sw = ns.CreateObject[ns.SwitchNode]()
-            # sw.SetAttribute("EcnEnabled", ns.BooleanValue(enable_qcn))
+            sw = ns.CreateObject[ns.SwitchNode]()
+            sw.SetAttribute("EcnEnabled", ns.BooleanValue(enable_qcn))
             n.Add(sw)
         elif node_type[i] == 2:
-            sw = ns.NVSwitchNode()
-            # sw = ns.CreateObject[ns.NVSwitchNode]()
+            sw = ns.CreateObject[ns.NVSwitchNode]()
             n.Add(sw)
 
     # 安装网络协议栈 
-    
-    import pdb; pdb.set_trace()
+
     internet = ns.InternetStackHelper()
     internet.Install(n)
 
-    
+    serverAddress = [None] * node_num
     for i in range(node_num):
         if n.Get(i).GetNodeType() == 0 or n.Get(i).GetNodeType() == 2:
             serverAddress[i] = node_id_to_ip(i);
@@ -669,7 +696,9 @@ def SetupNetwork(qp_finish, send_finish):
     rem.SetAttribute("ErrorRate", ns.DoubleValue(error_rate_per_link))
     rem.SetAttribute("ErrorUnit", ns.StringValue("ERROR_UNIT_PACKET"))
 
-    pfc_file = open(pfc_output_file, 'w')
+    pfc_file = None
+    if os.path.exists(pfc_output_file):
+       pfc_file = open(pfc_output_file, 'w')
 
     qbb = ns.QbbHelper()
     ipv4 = ns.Ipv4AddressHelper()
@@ -705,7 +734,9 @@ def SetupNetwork(qp_finish, send_finish):
 
         # 配置服务器节点接口
         if snode.GetNodeType() == 0 or snode.GetNodeType() == 2:
-            ipv4_interface = snode.GetObject(ns.internet.Ipv4.GetTypeId())
+            # ipv4_interface = ns.cppyy.gbl.getIpv4AddressFromNode(snode)
+            ipv4_interface = snode.GetObject[ns.Ipv4]().__deref__()
+
             ipv4_interface.AddInterface(devices.Get(0))
             ipv4_interface.AddAddress(
                 1, 
@@ -713,7 +744,8 @@ def SetupNetwork(qp_finish, send_finish):
             )
 
         if dnode.GetNodeType() == 0 or dnode.GetNodeType() == 2:
-            ipv4_interface = dnode.GetObject(ns.internet.Ipv4.GetTypeId())
+            ipv4_interface = dnode.GetObject[ns.Ipv4]().__deref__()
+
             ipv4_interface.AddInterface(devices.Get(1))
             ipv4_interface.AddAddress(
                 1, 
@@ -721,9 +753,12 @@ def SetupNetwork(qp_finish, send_finish):
             )
 
         # 记录接口信息
-        qbb_dev0 = ns.qbb.QbbNetDevice.Cast(devices.Get(0))
-        qbb_dev1 = ns.qbb.QbbNetDevice.Cast(devices.Get(1))
-        
+        # import pdb; pdb.set_trace()
+        # qbb_dev0 = ns.QbbNetDevice.Cast(devices.Get(0))
+        qbb_dev0 = devices.Get(0)
+        # qbb_dev1 = ns.QbbNetDevice.Cast(devices.Get(1))
+        qbb_dev1 = devices.Get(1)
+
         nbr2if[snode] = {}
         nbr2if[snode][dnode] = Interface(
             qbb_dev0.GetIfIndex(), True, 
@@ -743,14 +778,14 @@ def SetupNetwork(qp_finish, send_finish):
         ipv4.SetBase(ns.Ipv4Address(ipstring), ns.Ipv4Mask("255.255.255.0"))
         ipv4.Assign(devices)
 
-        # 连接PFC跟踪
-        qbb_dev0.TraceConnectWithoutContext(
-            "QbbPfc", 
-            ns.core.Callback(lambda p, d: get_pfc(pfc_file, qbb_dev0, p, d)) )
+        # # 连接PFC跟踪
+        # qbb_dev0.TraceConnectWithoutContext(
+        #     "QbbPfc", 
+        #     ns.core.Callback(lambda p, d: get_pfc(pfc_file, qbb_dev0, p, d)) )
         
-        qbb_dev1.TraceConnectWithoutContext(
-            "QbbPfc",
-            ns.core.Callback(lambda p, d: get_pfc(pfc_file, qbb_dev1, p, d)) )
+        # qbb_dev1.TraceConnectWithoutContext(
+        #     "QbbPfc",
+        #     ns.core.Callback(lambda p, d: get_pfc(pfc_file, qbb_dev1, p, d)) )
 
 
         nic_rate = get_nic_rate(n)  # 需要实现get_nic_rate函数
@@ -758,13 +793,15 @@ def SetupNetwork(qp_finish, send_finish):
         for i in range(node_num):
             node = n.Get(i)
             if node.GetNodeType() == 1:  # 普通交换机
-                sw = ns.SwitchNode.Cast(node)
+                # sw = ns.SwitchNode.Cast(node)
+                sw = node
                 shift = 3
                 
                 for j in range(1, sw.GetNDevices()):
-                    dev = ns.qbb.QbbNetDevice.Cast(sw.GetDevice(j))
+                    # dev = ns.QbbNetDevice.Cast(sw.GetDevice(j))
+                    dev = sw.GetDevice(j)
                     rate = dev.GetDataRate().GetBitRate()
-                    
+                    # import pdb; pdb.set_trace()
                     # 验证参数存在性
                     if rate not in rate2kmin:
                         raise ValueError(f"must set kmin for rate {rate}")
@@ -777,7 +814,8 @@ def SetupNetwork(qp_finish, send_finish):
                     sw.m_mmu.ConfigEcn(j, rate2kmin[rate], rate2kmax[rate], rate2pmax[rate])
                     
                     # 计算headroom
-                    channel = ns.qbb.QbbChannel.Cast(dev.GetChannel())
+                    # channel = ns.QbbChannel.Cast(dev.GetChannel())
+                    channel = dev.GetChannel()
                     delay = channel.GetDelay().GetTimeStep()
                     headroom = rate * delay // 8 // 1000000000 * 3
                     sw.m_mmu.ConfigHdrm(j, headroom)
@@ -795,15 +833,18 @@ def SetupNetwork(qp_finish, send_finish):
                 sw.m_mmu.node_id = sw.GetId()
                 
             elif node.GetNodeType() == 2:  # NVSwitch
-                sw = ns.NVSwitchNode.Cast(node)
+                # sw = ns.NVSwitchNode.Cast(node)
+                sw = node
                 shift = 3
                 
                 for j in range(1, sw.GetNDevices()):
-                    dev = ns.qbb.QbbNetDevice.Cast(sw.GetDevice(j))
+                    # dev = ns.QbbNetDevice.Cast(sw.GetDevice(j))
+                    dev = sw.GetDevice(j)
                     rate = dev.GetDataRate().GetBitRate()
                     
                     # 计算headroom
-                    channel = ns.qbb.QbbChannel.Cast(dev.GetChannel())
+                    # channel = ns.QbbChannel.Cast(dev.GetChannel())
+                    channel = dev.GetChannel()
                     delay = channel.GetDelay().GetTimeStep()
                     headroom = rate * delay // 8 // 1000000000 * 3
                     sw.m_mmu.ConfigHdrm(j, headroom)
@@ -820,8 +861,13 @@ def SetupNetwork(qp_finish, send_finish):
                 sw.m_mmu.ConfigBufferSize(buffer_size * 1024 * 1024)
                 sw.m_mmu.node_id = sw.GetId()
 
-    fct_output = open(fct_output_file, 'w')
-    send_output = open(send_output_file, 'w')
+    fct_output = None 
+    if os.path.exists(fct_output_file):
+        fct_output = open(fct_output_file, 'w')
+    
+    send_output = None 
+    if os.path.exists(send_output_file):
+        send_output = open(send_output_file, 'w')
 
     for i in range(node_num):
         node = n.Get(i)
@@ -866,15 +912,15 @@ def SetupNetwork(qp_finish, send_finish):
             rdma_driver.Init()
 
             # 连接跟踪信号
-            rdma_driver.TraceConnectWithoutContext(
-                "QpComplete", 
-                lambda qp: qp_finish(fct_output, rdma_driver.GetNetDevice(), qp)
-            )
+            # rdma_driver.TraceConnectWithoutContext(
+            #     "QpComplete", 
+            #     lambda qp: qp_finish(fct_output, rdma_driver.GetNetDevice(), qp)
+            # )
             
-            rdma_driver.TraceConnectWithoutContext(
-                "SendComplete",
-                lambda packet: send_finish(send_output, packet)
-            )
+            # rdma_driver.TraceConnectWithoutContext(
+            #     "SendComplete",
+            #     lambda packet: send_finish(send_output, packet)
+            # )
 
 
     # 配置ACK队列优先级
@@ -902,7 +948,11 @@ def SetupNetwork(qp_finish, send_finish):
             
             # 获取延迟参数
             delay = pairDelay[node_i][node_j]
+
+            import pdb; pdb.set_trace() 
+
             tx_delay = pairTxDelay[node_i][node_j]
+
             rtt = delay * 2 + tx_delay
             bw = pairBw[i][j]
             
@@ -910,6 +960,10 @@ def SetupNetwork(qp_finish, send_finish):
             bdp = rtt * bw // 1000000000 // 8
             pairBdp[node_i] = {}
             pairBdp[node_i][node_j] = bdp
+
+            if i not in pairRtt:
+                pairRtt[i] = {} 
+
             pairRtt[i][j] = rtt
             
             if bdp > max_bdp:
@@ -923,7 +977,8 @@ def SetupNetwork(qp_finish, send_finish):
     for i in range(node_num):
         node = n.Get(i)
         if node.GetNodeType() == 1:  # 交换机节点
-            sw = ns.SwitchNode.Cast(node)
+            # sw = ns.SwitchNode.Cast(node)
+            sw = node
             sw.SetAttribute("CcMode", ns.UintegerValue(cc_mode))
             sw.SetAttribute("MaxRtt", ns.UintegerValue(max_rtt))
 
