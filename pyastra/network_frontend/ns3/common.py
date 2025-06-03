@@ -121,6 +121,7 @@ pairTxDelay = {}
 pairBw = {}
 pairBdp = {}
 pairRtt = {}
+port_number = {} 
 
 @dataclass
 class FlowInput:
@@ -149,10 +150,10 @@ def monitor_qlen(qlen_output, nodes):
     for i in range(nodes.GetN()):
         node = nodes.Get(i)
         if node.GetNodeType() == 1:
-            sw = node.GetObject(ns.SwitchNode)
+            sw = node.GetObject[ns.SwitchNode]()
             sw.PrintSwitchQlen(qlen_output)
         elif node.GetNodeType() == 2:
-            sw = node.GetObject(ns.NVSwitchNode)
+            sw = node.GetObject[ns.NVSwitchNode]()
             sw.PrintSwitchQlen(qlen_output)
     ns.Simulator.Schedule(ns.MicroSeconds(qlen_mon_interval), monitor_qlen, qlen_output, nodes)
 
@@ -160,14 +161,14 @@ def monitor_bw(bw_output, nodes):
     for i in range(nodes.GetN()):
         node = nodes.Get(i)
         if node.GetNodeType() == 1:
-            sw = node.GetObject(ns.SwitchNode)
+            sw = node.GetObject[ns.SwitchNode]()
             sw.PrintSwitchBw(bw_output, bw_mon_interval)
         elif node.GetNodeType() == 2:
-            sw = node.GetObject(ns.NVSwitchNode)
+            sw = node.GetObject[ns.NVSwitchNode]()
             sw.PrintSwitchBw(bw_output, bw_mon_interval)
         else:
             host = node
-            host.GetObject(ns.RdmaDriver).m_rdma.PrintHostBW(bw_output, bw_mon_interval)
+            host.GetObject[ns.RdmaDriver]().m_rdma.PrintHostBW(bw_output, bw_mon_interval)
     ns.Simulator.Schedule(ns.MicroSeconds(bw_mon_interval), monitor_bw, bw_output, nodes)
 
 def monitor_qp_rate(rate_output, nodes):
@@ -175,7 +176,7 @@ def monitor_qp_rate(rate_output, nodes):
         node = nodes.Get(i)
         if node.GetNodeType() == 0:
             host = node
-            host.GetObject(ns.RdmaDriver).m_rdma.PrintQPRate(rate_output)
+            host.GetObject[ns.RdmaDriver]().m_rdma.PrintQPRate(rate_output)
     ns.Simulator.Schedule(ns.MicroSeconds(qp_mon_interval), monitor_qp_rate, rate_output, nodes)
 
 def monitor_qp_cnp_number(cnp_output, nodes):
@@ -183,7 +184,7 @@ def monitor_qp_cnp_number(cnp_output, nodes):
         node = nodes.Get(i)
         if node.GetNodeType() == 0:
             host = node
-            host.GetObject(ns.RdmaDriver).m_rdma.PrintQPCnpNumber(cnp_output)
+            host.GetObject[ns.RdmaDriver]().m_rdma.PrintQPCnpNumber(cnp_output)
     ns.Simulator.Schedule(ns.MicroSeconds(qp_mon_interval), monitor_qp_cnp_number, cnp_output, nodes)
 
 def schedule_monitor():
@@ -209,9 +210,17 @@ def CalculateRoute(host):
     delay = {host: 0}
     txDelay = {host: 0}
     bw = {host: 0xffffffffffffffff}
-    for i in range(len(q)):
+    
+    # import pdb; pdb.set_trace() 
+
+    i = 0
+    while i < len(q):
+        # import pdb; pdb.set_trace() 
         now = q[i]
+        # import pdb; pdb.set_trace() 
+        i = i + 1 
         d = dis[now]
+        next_node = None
         for neighbor, iface in nbr2if[now].items():
             if not iface.up:
                 continue
@@ -223,35 +232,53 @@ def CalculateRoute(host):
                 bw[next_node] = min(bw[now], iface.bw)
                 if next_node.GetNodeType() in (1, 2):
                     q.append(next_node)
+                    
             via_nvswitch = False
 
             # import pdb; pdb.set_trace()
             
-            if next_node in dis and d + 1 == dis[next_node]:
-                if next_node in nextHop and host in nextHop[next_node]:
-                    for x in nextHop[next_node][host]:
-                        if x.GetNodeType() == 2:
-                            via_nvswitch = True
+            if d + 1 == dis[next_node]:
+                if next_node not in nextHop:
+                    nextHop[next_node] = {}
+                if host not in nextHop[next_node]:
+                    nextHop[next_node][host] = []
+                for x in nextHop[next_node][host]:
+                    if x.GetNodeType() == 2:
+                        via_nvswitch = True
 
-                    if not via_nvswitch:
-                        if now.GetNodeType() == 2:
-                            nextHop[next_node][host].clear()
-                        nextHop[next_node][host].append(now)
-                    elif via_nvswitch and now.GetNodeType() == 2:
-                        nextHop[next_node][host].append(now)
+                if not via_nvswitch:
+                    if now.GetNodeType() == 2:
+                        nextHop[next_node][host].clear()
+                    nextHop[next_node][host].append(now)
+                elif via_nvswitch and now.GetNodeType() == 2:
+                    nextHop[next_node][host].append(now)
 
-                elif next_node.GetNodeType() == 0:
+                if now not in  nextHop[next_node]:
+                    nextHop[next_node][now]  = [] 
+
+                if next_node.GetNodeType() == 0 and len( nextHop[next_node][now] ) == 0:
                     if next_node not in nextHop:
                         nextHop[next_node] = {}
                     if now not in nextHop[next_node]:
                         nextHop[next_node][now] = [] 
 
                     nextHop[next_node][now].append(now)
-                    pairBw[next_node.GetId()][now.GetId()] = pairBw[now.GetId()][next_node.GetId()] = iface.bw
+                    if next_node.GetId() not in pairBw:
+                        pairBw[next_node.GetId()] = {}
+
+                    pairBw[next_node.GetId()][now.GetId()] = iface.bw
+
+                    if now.GetId() not in pairBw:
+                        pairBw[now.GetId()] = {}
+
+                    pairBw[now.GetId()][next_node.GetId()] = iface.bw
     
     for node, dly in delay.items():
-        pairDelay[node] = {}
+        if node not in pairDelay:
+            pairDelay[node] = {} 
+
         pairDelay[node][host] = dly
+
     for node, tx_dly in txDelay.items():
 
         if node not in pairTxDelay:
@@ -259,13 +286,14 @@ def CalculateRoute(host):
 
         pairTxDelay[node][host] = tx_dly
 
-    # import pdb; pdb.set_trace()
 
     for node, b in bw.items():
         if node.GetId() not in pairBw:
             pairBw[node.GetId()] = {}
 
         pairBw[node.GetId()][host.GetId()] = b
+    
+    return 
 
 def CalculateRoutes(nodes):
     for i in range(nodes.GetN()):
@@ -276,19 +304,19 @@ def CalculateRoutes(nodes):
 def SetRoutingEntries():
     for node, table in nextHop.items():
         for dst, nexts in table.items():
-            dstAddr = dst.GetObject(ns.Ipv4).GetAddress(1, 0).GetLocal()
+            dstAddr = dst.GetObject[ns.Ipv4]().GetAddress(1, 0).GetLocal()
             for next_node in nexts:
                 interface = nbr2if[node][next_node].idx
                 if node.GetNodeType() == 1:
-                    node.GetObject(ns.SwitchNode).AddTableEntry(dstAddr, interface)
+                    node.GetObject[ns.SwitchNode]().AddTableEntry(dstAddr, interface)
                 elif node.GetNodeType() == 2:
-                    node.GetObject(ns.NVSwitchNode).AddTableEntry(dstAddr, interface)
-                    node.GetObject(ns.RdmaDriver).m_rdma.AddTableEntry(dstAddr, interface, True)
+                    node.GetObject[ns.NVSwitchNode]().AddTableEntry(dstAddr, interface)
+                    node.GetObject[ns.RdmaDriver]().m_rdma.AddTableEntry(dstAddr, interface, True)
                 else:
                     is_nvswitch = next_node.GetNodeType() == 2
-                    node.GetObject(ns.RdmaDriver).m_rdma.AddTableEntry(dstAddr, interface, is_nvswitch)
+                    node.GetObject[ns.RdmaDriver]().m_rdma.AddTableEntry(dstAddr, interface, is_nvswitch)
                     if next_node.GetId() == dst.GetId():
-                        node.GetObject(ns.RdmaDriver).m_rdma.add_nvswitch(dst.GetId())
+                        node.GetObject[ns.RdmaDriver]().m_rdma.add_nvswitch(dst.GetId())
 
 def printRoutingEntries():
     types = {0: "HOST", 1: "SWITCH", 2: "NVSWITCH"}
@@ -342,20 +370,20 @@ def TakeDownLink(nodes, a, b):
         node = nodes.Get(i)
         if node.GetNodeType() == 1:
             # node.GetObject(ns.SwitchNode).ClearTable()
-            node.ClearTable()
+            node.GetObject[ns.SwitchNode]().ClearTable()
         elif node.GetNodeType() == 2:
             # node.GetObject(ns.NVSwitchNode).ClearTable()
-            node.ClearTable()
+            node.GetObject[ns.NVSwitchNode]().ClearTable()
         else:
             # node.GetObject(ns.RdmaDriver).m_rdma.ClearTable()
-            node.m_rdma.ClearTable()
-    a.GetDevice(nbr2if[a][b].idx).GetObject(ns.QbbNetDevice).TakeDown()
-    b.GetDevice(nbr2if[b][a].idx).GetObject(ns.QbbNetDevice).TakeDown()
+            node.GetObject[ns.RdmaDriver]().m_rdma.ClearTable()
+    a.GetDevice(nbr2if[a][b].idx).GetObject[ns.QbbNetDevice]().TakeDown()
+    b.GetDevice(nbr2if[b][a].idx).GetObject[ns.QbbNetDevice]().TakeDown()
     SetRoutingEntries()
     for i in range(nodes.GetN()):
         node = nodes.Get(i)
         if node.GetNodeType() == 0:
-            node.GetObject(ns.RdmaDriver).m_rdma.RedistributeQp()
+            node.GetObject[ns.RdmaDriver]().m_rdma.RedistributeQp()
 
 def get_output_file_name(config_file, output_file):
     idx = config_file.rfind('/')
@@ -759,14 +787,18 @@ def SetupNetwork(qp_finish, send_finish):
         # qbb_dev1 = ns.QbbNetDevice.Cast(devices.Get(1))
         qbb_dev1 = devices.Get(1)
 
-        nbr2if[snode] = {}
+        if snode not in nbr2if:
+            nbr2if[snode] = {}
+        
         nbr2if[snode][dnode] = Interface(
             qbb_dev0.GetIfIndex(), True, 
             qbb_dev0.GetChannel().GetDelay().GetTimeStep(), 
             qbb_dev0.GetDataRate().GetBitRate()
         )
         
-        nbr2if[dnode] = {}
+        if dnode not in nbr2if:
+            nbr2if[dnode] = {}
+        
         nbr2if[dnode][snode] = Interface(
             qbb_dev1.GetIfIndex(), True, 
             qbb_dev1.GetChannel().GetDelay().GetTimeStep(), 
@@ -930,6 +962,7 @@ def SetupNetwork(qp_finish, send_finish):
         ns.RdmaEgressQueue.ack_q_idx = 3
 
     # 计算路由
+    # import pdb; pdb.set_trace()
     CalculateRoutes(n)
     SetRoutingEntries()
 
@@ -949,7 +982,7 @@ def SetupNetwork(qp_finish, send_finish):
             # 获取延迟参数
             delay = pairDelay[node_i][node_j]
 
-            import pdb; pdb.set_trace() 
+            # import pdb; pdb.set_trace() 
 
             tx_delay = pairTxDelay[node_i][node_j]
 
@@ -990,36 +1023,41 @@ def SetupNetwork(qp_finish, send_finish):
             trace_nodes = ns.NodeContainer(trace_nodes, n.Get(nid));
 
     # 启用跟踪
-    trace_output = open(trace_output_file, 'w') if enable_trace else None
-    if enable_trace:
-        qbb.EnableTracing(trace_output, trace_nodes)
-
-    sim_setting = ns.SimSetting()
-    for node, interfaces in nbr2if.items():
-        for neighbor, info in interfaces.items():
-            dev = ns.qbb.QbbNetDevice.Cast(node.GetDevice(info.idx))
-            sim_setting.port_speed[node.GetId()][info.idx] = dev.GetDataRate().GetBitRate()
-    sim_setting.win = max_bdp
-    if trace_output:
-        sim_setting.Serialize(trace_output)
+    try:
+        trace_output = open(trace_output_file, 'w') if enable_trace else None
+        if enable_trace:
+            qbb.EnableTracing(trace_output, trace_nodes)
+        
+        sim_setting = ns.CreateObject[ns.SimSetting]()
+        for node, interfaces in nbr2if.items():
+            for neighbor, info in interfaces.items():
+                dev = node.GetDevice(info.idx).GetObject[ns.QbbNetDevice]()
+                # dev = ns.qbb.QbbNetDevice.Cast(node.GetDevice(info.idx))
+                sim_setting.port_speed[node.GetId()][info.idx] = dev.GetDataRate().GetBitRate()
+        sim_setting.win = max_bdp
+        if trace_output:
+            sim_setting.Serialize(trace_output)
+    
+    except PermissionError as e:
+        print(f"Permission Error: {e}", file=sys.stderr)
 
     # 创建应用程序
-    ns.LogComponent.Enable("Application", ns.core.LOG_LEVEL_INFO)
+    # ns.LogComponent.Enable("Application", ns.core.LOG_LEVEL_INFO)
     inter_packet_interval = ns.Seconds(0.0000005 / 2)
 
-    # 初始化端口号矩阵
-    port_number = defaultdict(lambda: defaultdict(int))
     for i in range(node_num):
         node = n.Get(i)
         if node.GetNodeType() in (0, 2):
             for j in range(node_num):
                 peer = n.Get(j)
                 if peer.GetNodeType() in (0, 2):
+                    if i not in port_number:
+                        port_number[i] = {}
+
                     port_number[i][j] = 10000
 
-    # 关闭输入文件
-    topof.close()
-    tracef.close()
+    if topof is not None: topof.close()
+    if tracef is not None: tracef.close()
 
     if link_down_time > 0:
         ns.Simulator.Schedule(
@@ -1055,3 +1093,5 @@ if __name__ == "__main__":
     ns.Simulator.Stop(ns.Seconds(100))
     ns.Simulator.Run()
     ns.Simulator.Destroy()
+
+    print("Simulation Done.")
