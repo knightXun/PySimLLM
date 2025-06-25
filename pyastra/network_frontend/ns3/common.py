@@ -369,13 +369,10 @@ def TakeDownLink(nodes, a, b):
     for i in range(nodes.GetN()):
         node = nodes.Get(i)
         if node.GetNodeType() == 1:
-            # node.GetObject(ns.SwitchNode).ClearTable()
             node.GetObject[ns.SwitchNode]().ClearTable()
         elif node.GetNodeType() == 2:
-            # node.GetObject(ns.NVSwitchNode).ClearTable()
             node.GetObject[ns.NVSwitchNode]().ClearTable()
         else:
-            # node.GetObject(ns.RdmaDriver).m_rdma.ClearTable()
             node.GetObject[ns.RdmaDriver]().m_rdma.ClearTable()
     a.GetDevice(nbr2if[a][b].idx).GetObject[ns.QbbNetDevice]().TakeDown()
     b.GetDevice(nbr2if[b][a].idx).GetObject[ns.QbbNetDevice]().TakeDown()
@@ -1083,7 +1080,7 @@ if __name__ == "__main__":
 
 
     SetConfig()
-    SetupNetwork(None, None)  # 需要实现具体的qp_finish和send_finish回调
+    SetupNetwork(None, None) 
     
     print("Running Simulation.")
 
