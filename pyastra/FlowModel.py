@@ -91,12 +91,12 @@ class RingFlowModel:
         appCon.Start(ns.NanoSeconds(send_lat));
         
     def runReduceScatter(self, data_size):
-        single_batch = data_size / 8
+        single_batch = int( data_size / 8 )
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
         to_npu_time = 0
 
-        for j in range( len(self.nodes) / 8 ):
+        for j in range( int( len(self.nodes) / 8 ) ):
             arr = list(range(j * 8, j*8 + 8 ) )
             for a in arr:
                 for b in arr:
@@ -110,7 +110,7 @@ class RingFlowModel:
 
 
     def runAllGather(self, data_size):
-        single_batch = data_size / (8 * 8)
+        single_batch = int( data_size / (8 * 8) )
 
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
@@ -136,7 +136,7 @@ class RingFlowModel:
 
 
     def runAllReduce(self, data_size):
-        single_batch = data_size / (8 * 8)
+        single_batch = int( data_size / (8 * 8) )
 
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
@@ -163,12 +163,12 @@ class RingFlowModel:
 
 
     def runAll2All(self, data_size): 
-        single_batch = data_size / 8
+        single_batch = int( data_size / 8 )
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
         to_npu_time = 0
 
-        for j in range( len(self.nodes) / 8 ):
+        for j in range( int( len(self.nodes) / 8 ) ):
             arr = list(range(j * 8, j*8 + 8 ) )
             for a in arr:
                 for b in arr:
@@ -273,12 +273,12 @@ class NcclTreeFlowModel:
         appCon.Start(ns.NanoSeconds(send_lat));
 
     def runReduceScatter(self, data_size):
-        single_batch = data_size / 8
+        single_batch = int(data_size / 8)
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
         to_npu_time = 0
 
-        for j in range( len(self.nodes) / 8 ):
+        for j in range( int(len(self.nodes) / 8)  ):
             arr = list(range(j * 8, j*8 + 8 ) )
             for a in arr:
                 for b in arr:
@@ -292,7 +292,7 @@ class NcclTreeFlowModel:
 
 
     def runAllGather(self, data_size):
-        single_batch = data_size / (8 * 8)
+        single_batch = int( data_size / (8 * 8) )
 
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
@@ -316,7 +316,7 @@ class NcclTreeFlowModel:
         return endT - startT + to_npu_time  
 
     def runAllReduce(self, data_size):
-        single_batch = data_size / 4
+        single_batch = int(data_size / 4)
 
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
@@ -337,14 +337,14 @@ class NcclTreeFlowModel:
 
 
     def runAll2All(self, data_size): 
-        single_batch = data_size / 8
+        single_batch = int(data_size / 8)
 
         startT = ns.Simulator.Now().GetNanoSeconds()
 
         #TODO: compute this npu_time
         to_npu_time = 0
 
-        for j in range( len(self.nodes) / 8 ):
+        for j in range( int( len(self.nodes) / 8 ) ):
             arr = list(range(j * 8, j*8 + 8 ) )
             for a in arr:
                 for b in arr:

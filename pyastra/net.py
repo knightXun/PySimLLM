@@ -1129,24 +1129,21 @@ def p2pSend(src, dst, packetSize, send_lat=3000):
 
 
 if __name__ == "__main__":
-    # import time 
-    # begint = time.time_ns()
-    # ReadConf("etc/Spectrum-X_8g_8gps_400Gbps_H100", "etc/SimAI.conf")
-    # print("Read Conf Done.")
-    # SetConfig()
-    # SetupNetwork(None, None) 
-    # from FlowModel import FlowModel
-    # nodes = list(range(16))
-    # NVswitchs = list(range(16,18))
-    #         # self.flow_model = NcclTreeFlowModel(nodes, \
-    #         #     nvswitchs, ns3_nodes, portNumber, pairBdp, has_win, global_t, pairRtt, maxRtt, serverAddress)
-    # flowModel = FlowModel(nodes, NVswitchs, n, portNumber, pairBdp, has_win, global_t, pairRtt, maxRtt, serverAddress, maxBdp)
-    # print("Running Simulation.")
-    # # print("start simulation time:", ns.Simulator.Now().GetNanoSeconds())
-    # allreduceTime = flowModel.runAllReduce(5120)
-    # print("allreduce simulation time:", allreduceTime)
-    # ns.Simulator.Destroy()
-    # print("Simulation Done.")
+    import time 
+    begint = time.time_ns()
+    ReadConf("etc/Spectrum-X_8g_8gps_400Gbps_H100", "etc/SimAI.conf")
+    print("Read Conf Done.")
+    SetConfig()
+    SetupNetwork(None, None) 
+    from FlowModel import FlowModel
+    nodes = list(range(8))
+    NVswitchs = list(range(8,9))
+    flowModel = FlowModel(nodes, NVswitchs, n, portNumber, pairBdp, has_win, global_t, pairRtt, maxRtt, serverAddress, maxBdp)
+    print("Running Simulation.")
+    allreduceTime = flowModel.runAllReduce(5120)
+    print("8 nodes allreduce simulation time:", allreduceTime)
+    ns.Simulator.Destroy()
+    print("Simulation Done.")
 
     # import time 
     # begint = time.time_ns()
@@ -1163,23 +1160,23 @@ if __name__ == "__main__":
     # print("Running Simulation.")
     # # print("start simulation time:", ns.Simulator.Now().GetNanoSeconds())
     # allreduceTime = flowModel.runAllReduce(5120)
-    # print("allreduce simulation time:", allreduceTime)
+    # print("16 nodes allreduce simulation time:", allreduceTime)
     # ns.Simulator.Destroy()
     # print("Simulation Done.")
 
-    import time 
-    begint = time.time_ns()
-    ReadConf("etc/Spectrum-X_16g_8gps_100Gbps_A100", "etc/SimAI.conf")
-    print("Read Conf Done.")
-    SetConfig()
-    SetupNetwork(None, None) 
-    from FlowModel import FlowModel
-    nodes = list(range(16))
-    NVswitchs = list(range(16,18))
-    flowModel = FlowModel(nodes, NVswitchs, n, portNumber, pairBdp, has_win, global_t, pairRtt, maxRtt, serverAddress, maxBdp)
-    print("Running Simulation.")
-    # print("start simulation time:", ns.Simulator.Now().GetNanoSeconds())
-    AllGatherTime = flowModel.runAllGather(5120)
-    print("AllGather simulation time:", AllGatherTime)
-    ns.Simulator.Destroy()
-    print("Simulation Done.")
+    # import time 
+    # begint = time.time_ns()
+    # ReadConf("etc/Spectrum-X_16g_8gps_100Gbps_A100", "etc/SimAI.conf")
+    # print("Read Conf Done.")
+    # SetConfig()
+    # SetupNetwork(None, None) 
+    # from FlowModel import FlowModel
+    # nodes = list(range(16))
+    # NVswitchs = list(range(16,18))
+    # flowModel = FlowModel(nodes, NVswitchs, n, portNumber, pairBdp, has_win, global_t, pairRtt, maxRtt, serverAddress, maxBdp)
+    # print("Running Simulation.")
+    # # print("start simulation time:", ns.Simulator.Now().GetNanoSeconds())
+    # AllGatherTime = flowModel.runAllGather(5120)
+    # print("16 nodes allGather simulation time:", AllGatherTime)
+    # ns.Simulator.Destroy()
+    # print("Simulation Done.")

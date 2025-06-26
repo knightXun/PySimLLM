@@ -1,6 +1,5 @@
 import enum
 
-from AstraNetworkAPI import AstraNetworkAPI
 
 class GPUType(enum.Enum):
     A100 = 0
@@ -15,7 +14,7 @@ GBps = 1.0 / (1024 * 1024 * 1024)
 Tick = int
 
 class ComType(enum.Enum):
-    None = 0
+    NONE = 0
     Reduce_Scatter = 1
     All_Gather = 2
     All_Reduce = 3
