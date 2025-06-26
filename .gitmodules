@@ -1,0 +1,4 @@
+[submodule "aicb"]
+	path = aicb
+	url = https://github.com/aliyun/aicb
+	branch = master
