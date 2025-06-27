@@ -129,22 +129,8 @@ class Layer:
     def is_fwd_pass_comm_finished(self):
         return len(self.fwd_pass_datasets) == 0
 
-    def is_fwd_pass_comm_finished_blocking(self):
-        if len(self.fwd_pass_datasets) == 0:
-            return True
-        if len(self.started_waiting_for_fwd_pass) == 0:
-            self.started_waiting_for_fwd_pass.append(Sys.boostedTick())
-        return False
-
     def is_input_grad_comm_finished(self):
         return len(self.input_grad_datasets) == 0
-
-    def is_input_grad_comm_finished_blocking(self):
-        if len(self.input_grad_datasets) == 0:
-            return True
-        if len(self.started_waiting_for_input_grad) == 0:
-            self.started_waiting_for_input_grad.append(Sys.boostedTick())
-        return False
 
     def is_weight_grad_comm_finished(self):
         return len(self.weight_grad_datasets) == 0
