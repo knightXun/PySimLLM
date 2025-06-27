@@ -108,6 +108,15 @@ class Layer:
         self.total_weight_grad_compute += self.weight_grad_compute_time
         return self.weight_grad_compute_time
 
+    def get_fwd_pass_comm(self):
+        return self.fwd_update_time
+
+    def get_input_grad_comm(self):
+        return self.input_grad_update_time
+
+    def get_weight_grad_comm(self):
+        return self.weight_grad_update_time
+
     def increment_waiting_for_wg(self):
         self.total_waiting_for_wg_comm += 1
 
@@ -663,23 +672,27 @@ class Layer:
 
     def issue_weight_grad_comm(self):
         """发起权重梯度通信过程"""
-        weight_grad_comm_type = self.weight_grad_comm_type
-        weight_grad_comm_size = self.weight_grad_comm_size
+        comm_type = self.weight_grad_comm_type
+        comm_size = self.weight_grad_comm_size
 
+        # print(f"*************************  {self.id} weight_grad_comm *************************")
+        # import pdb; pdb.set_trace()
         # 处理不同通信类型
-        if weight_grad_comm_type == ComType.All_Reduce:
-            self.weight_grad_update_time = self.flowModel.runAllReduce(weight_grad_comm_size)
+        if comm_type == ComType.All_Reduce:
+            self.weight_grad_update_time = self.flowModel.runAllReduce(comm_size)
             return self.weight_grad_update_time
-        elif weight_grad_comm_type == ComType.All_to_All:
-            self.weight_grad_update_time = self.flowModel.runAll2All(weight_grad_comm_size)
+        elif comm_type == ComType.All_to_All:
+            self.weight_grad_update_time = self.flowModel.runAll2All(comm_size)
             return self.weight_grad_update_time
-        elif weight_grad_comm_type == ComType.All_Gather:
-            self.weight_grad_update_time =  self.flowModel.runAllGather(weight_grad_comm_size)
+        elif comm_type == ComType.All_Gather:
+            self.weight_grad_update_time =  self.flowModel.runAllGather(comm_size)
             return self.weight_grad_update_time
-        elif weight_grad_comm_type == ComType.Reduce_Scatter:
-            self.weight_grad_update_time =  self.flowModel.runReduceScatter(weight_grad_comm_size)
+        elif comm_type == ComType.Reduce_Scatter:
+            # simai 在这里没有做通讯，不知原因
+            # self.weight_grad_update_time =  self.flowModel.runReduceScatter(comm_size)
+            self.weight_grad_update_time = 0
             return self.weight_grad_update_time
-        elif weight_grad_comm_type == ComType.NONE:
+        elif comm_type == ComType.NONE:
             self.weight_grad_update_time = 0
             return self.weight_grad_update_time
         else:

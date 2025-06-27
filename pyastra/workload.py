@@ -100,6 +100,16 @@ class Workload:
         else:
             raise ValueError("No known parallelism!")
 
+
+        for i in range(self.SIZE):
+            print(f"*************************  {self.layers[i].id}-{i+1} workload stats *************************")
+            print(f"layer {i} Total cycles spent on fwd pass compute {self.layers[i].get_fwd_pass_compute()}")
+            print(f"layer {i} Total cycles spent on weight grad compute {self.layers[i].get_weight_grad_compute()}")
+            print(f"layer {i} Total cycles spent on input grad compute {self.layers[i].get_input_grad_compute()}")
+            print(f"layer {i} Total cycles spent on fwd pass comm {self.layers[i].get_fwd_pass_comm()}")
+            print(f"layer {i} Total cycles spent on weight grad comm {self.layers[i].get_weight_grad_comm()}")
+            print(f"layer {i} Total cycles spent on input grad comm {self.layers[i].get_input_grad_comm()}")
+
     def report(self):
         total_compute = 0.0
         total_exposed = 0.0
@@ -181,7 +191,6 @@ class Workload:
         # 先执行前向
         for i in range(self.SIZE):
             # 先拿到前向计算时间，再加上前向通讯时间
-
             compute_time = self.layers[i].get_fwd_pass_compute()
             comm_time = self.layers[i].issue_forward_pass_comm()
 
@@ -190,6 +199,7 @@ class Workload:
 
             self.workload_compute_time += compute_time
             self.workload_communicate_time += comm_time
+            print(f"Layer {i} FWD compute time: {compute_time}, comm_time: {comm_time}")
 
 
         for i in range(self.SIZE-1, -1, -1):
@@ -203,6 +213,8 @@ class Workload:
             self.workload_compute_time += compute_time
             self.workload_communicate_time += comm_time
 
+            print(f"Layer {i} Input Grad compute time: {compute_time}, comm_time: {comm_time}")
+
             # 拿到反向梯度计算时间，再加上反向梯度通讯时间
             compute_time = self.layers[i].get_weight_grad_compute()
             comm_time = self.layers[i].issue_weight_grad_comm()
@@ -212,6 +224,8 @@ class Workload:
             
             self.workload_compute_time += compute_time
             self.workload_communicate_time += comm_time
+            print(f"Layer {i} Weight Grad compute time: {compute_time}, comm_time: {comm_time}")
+
 
     def get_layer_numbers(self, workload_input: str) -> int:
         try:
@@ -283,7 +297,6 @@ class Workload:
             with open(name, 'r') as inFile:
                 print("Success in opening workload file")
 
-                # import pdb; pdb.set_trace()
                 firstline = inFile.readline().strip()
                 tokens = firstline.split()
 
@@ -393,8 +406,7 @@ class Workload:
 
                 contents = inFile.readlines()
                 for i in range( len(contents) ):
-                    # import pdb; pdb.set_trace()
-                    # 读取层基础参数
+                     # 读取层基础参数
                     parts = contents[i].split()
                     if not parts:
                         raise ValueError(f"Empty line at layer {i}")
@@ -647,30 +659,182 @@ class Workload:
             sys.exit(1)
 
 if __name__ == "__main__":
-    import time 
-    begint = time.time_ns()
-    import net
-    from net import ReadConf, SetConfig, SetupNetwork
-    ReadConf("etc/Spectrum-X_8g_8gps_400Gbps_H100", "etc/SimAI.conf")
-    print("Read Conf Done.")
-    SetConfig()
-    SetupNetwork(None, None) 
-    from FlowModel import FlowModel
-    nodes = list(range(8))
-    NVswitchs = list(range(8,9))
 
-    flowModel = FlowModel(nodes, NVswitchs, net.n, \
-        net.portNumber, net.pairBdp, net.has_win, \
-        net.global_t, net.pairRtt, net.maxRtt, \
-        net.serverAddress, net.maxBdp)
+    def test1():
+        import time 
+        begint = time.time_ns()
+        import net
+        from net import ReadConf, SetConfig, SetupNetwork
+        ReadConf("etc/Spectrum-X_8g_8gps_400Gbps_H100", "etc/SimAI.conf")
+        print("Read Conf Done.")
+        SetConfig()
+        SetupNetwork(None, None) 
+        from FlowModel import FlowModel
+        nodes = list(range(8))
+        NVswitchs = list(range(8,9))
 
-    print("Running Simulation.")
-    # allreduceTime = flowModel.runAllReduce(5120)
-    
-    w = Workload("G175B", "workloads/G175B-M1-C03_GPT175B_megatron_tp8_pp1_mbs1_A100.txt", 1, 1, 0, "etc", False, 8, flowModel)
-    # w.initialize_workload("G175B", flowModel)
-    w.run()
+        flowModel = FlowModel(nodes, NVswitchs, net.n, \
+            net.portNumber, net.pairBdp, net.has_win, \
+            net.global_t, net.pairRtt, net.maxRtt, \
+            net.serverAddress, net.maxBdp)
 
-    print("8 nodes simulation total time: {}, compute time: {}, comm time: {}", w.workload_finished_time, w.workload_compute_time, w.workload_communicate_time)
-    ns.Simulator.Destroy()
-    print("Simulation Done.")
+        print("Running Simulation.")
+        # allreduceTime = flowModel.runAllReduce(5120)
+        
+        w = Workload("G175B", "workloads/G175B-M1-C03_GPT175B_megatron_tp8_pp1_mbs1_A100.txt", 1, 1, 0, "etc", False, 8, flowModel)
+        # w.initialize_workload("G175B", flowModel)
+        w.run()
+
+        print(f"8 nodes simulation total time: {w.workload_finished_time}, compute time: {w.workload_compute_time}, comm time: {w.workload_communicate_time}")
+        ns.Simulator.Destroy()
+        print("Simulation Done.")
+
+    def test2():
+        import time 
+        begint = time.time_ns()
+        import net
+        from net import ReadConf, SetConfig, SetupNetwork
+        ReadConf("etc/Spectrum-X_16g_8gps_100Gbps_A100", "etc/SimAI.conf")
+        print("Read Conf Done.")
+        SetConfig()
+        SetupNetwork(None, None) 
+        from FlowModel import FlowModel
+        nodes = list(range(8))
+        NVswitchs = list(range(8,9))
+
+        flowModel = FlowModel(nodes, NVswitchs, net.n, \
+            net.portNumber, net.pairBdp, net.has_win, \
+            net.global_t, net.pairRtt, net.maxRtt, \
+            net.serverAddress, net.maxBdp)
+
+        print("Running Simulation.")
+        # allreduceTime = flowModel.runAllReduce(5120)
+        
+        w = Workload("G175B", "workloads/G175B-M1-C03_GPT175B_megatron_tp8_pp1_mbs1_A100.txt", 1, 1, 0, "etc", False, 8, flowModel)
+        # w.initialize_workload("G175B", flowModel)
+        w.run()
+
+        print(f"16 nodes simulation total time: {w.workload_finished_time}, compute time: {w.workload_compute_time}, comm time: {w.workload_communicate_time}")
+        ns.Simulator.Destroy()
+        print("Simulation Done.")
+
+    def test3():
+        import time 
+        begint = time.time_ns()
+        import net
+        from net import ReadConf, SetConfig, SetupNetwork
+        ReadConf("etc/Spectrum-X_128g_8gps_100Gbps_A100", "etc/SimAI.conf")
+        print("Read Conf Done.")
+        SetConfig()
+        SetupNetwork(None, None) 
+        from FlowModel import FlowModel
+        nodes = list(range(8))
+        NVswitchs = list(range(8,9))
+
+        flowModel = FlowModel(nodes, NVswitchs, net.n, \
+            net.portNumber, net.pairBdp, net.has_win, \
+            net.global_t, net.pairRtt, net.maxRtt, \
+            net.serverAddress, net.maxBdp)
+
+        print("Running Simulation.")
+        # allreduceTime = flowModel.runAllReduce(5120)
+        
+        w = Workload("G175B", "workloads/G175B-M1-C03_GPT175B_megatron_tp8_pp1_mbs1_A100.txt", 1, 1, 0, "etc", False, 8, flowModel)
+        # w.initialize_workload("G175B", flowModel)
+        w.run()
+
+        print(f"128 nodes simulation total time: {w.workload_finished_time}, compute time: {w.workload_compute_time}, comm time: {w.workload_communicate_time}")
+        ns.Simulator.Destroy()
+        print("Simulation Done.")
+
+    def test4():
+        import time 
+        begint = time.time_ns()
+        import net
+        from net import ReadConf, SetConfig, SetupNetwork
+        ReadConf("etc/Spectrum-X_8g_8gps_400Gbps_H100", "etc/SimAI.conf")
+        print("Read Conf Done.")
+        SetConfig()
+        SetupNetwork(None, None) 
+        from FlowModel import FlowModel
+        nodes = list(range(8))
+        NVswitchs = list(range(8,9))
+
+        flowModel = FlowModel(nodes, NVswitchs, net.n, \
+            net.portNumber, net.pairBdp, net.has_win, \
+            net.global_t, net.pairRtt, net.maxRtt, \
+            net.serverAddress, net.maxBdp)
+
+        print("Running Simulation.")
+        # allreduceTime = flowModel.runAllReduce(5120)
+        
+        w = Workload("G13B", "workloads/G13B-M1-C01_GPT13B_megatron_tp8_pp1_mbs1_A100.txt", 1, 1, 0, "etc", False, 8, flowModel)
+        # w.initialize_workload("G175B", flowModel)
+        w.run()
+
+        print(f"8 nodes simulation total time: {w.workload_finished_time}, compute time: {w.workload_compute_time}, comm time: {w.workload_communicate_time}")
+        ns.Simulator.Destroy()
+        print("Simulation Done.")
+
+    def test5():
+        import time 
+        begint = time.time_ns()
+        import net
+        from net import ReadConf, SetConfig, SetupNetwork
+        ReadConf("etc/Spectrum-X_16g_8gps_100Gbps_A100", "etc/SimAI.conf")
+        print("Read Conf Done.")
+        SetConfig()
+        SetupNetwork(None, None) 
+        from FlowModel import FlowModel
+        nodes = list(range(16))
+        NVswitchs = list(range(17,19))
+
+        flowModel = FlowModel(nodes, NVswitchs, net.n, \
+            net.portNumber, net.pairBdp, net.has_win, \
+            net.global_t, net.pairRtt, net.maxRtt, \
+            net.serverAddress, net.maxBdp)
+
+        print("Running Simulation.")
+        # allreduceTime = flowModel.runAllReduce(5120)
+        
+        w = Workload("G13B", "workloads/G13B-M1-C01_GPT13B_megatron_tp8_pp1_mbs1_A100.txt", 1, 1, 0, "etc", False, 16, flowModel)
+        # w.initialize_workload("G175B", flowModel)
+        w.run()
+
+        print(f"16 nodes simulation total time: {w.workload_finished_time}, compute time: {w.workload_compute_time}, comm time: {w.workload_communicate_time}")
+        ns.Simulator.Destroy()
+        print("Simulation Done.")
+
+    def test6():
+        import time 
+        begint = time.time_ns()
+        import net
+        from net import ReadConf, SetConfig, SetupNetwork
+        ReadConf("etc/Spectrum-X_128g_8gps_100Gbps_A100", "etc/SimAI.conf")
+        print("Read Conf Done.")
+        SetConfig()
+        SetupNetwork(None, None) 
+        from FlowModel import FlowModel
+        nodes = list(range(128))
+        NVswitchs = list(range(129,144))
+
+        flowModel = FlowModel(nodes, NVswitchs, net.n, \
+            net.portNumber, net.pairBdp, net.has_win, \
+            net.global_t, net.pairRtt, net.maxRtt, \
+            net.serverAddress, net.maxBdp)
+
+        print("Running Simulation.")
+        
+        w = Workload("G13B", "workloads/G13B-M1-C01_GPT13B_megatron_tp8_pp1_mbs1_A100.txt", 1, 1, 0, "etc", False, 128, flowModel)
+        w.run()
+
+        print(f"128 nodes simulation total time: {w.workload_finished_time}, compute time: {w.workload_compute_time}, comm time: {w.workload_communicate_time}")
+        ns.Simulator.Destroy()
+        print("Simulation Done.")
+
+    # print("*" * 20)
+    # test4()
+    # print("*" * 20)
+    # test5()
+    # print("*" * 20)
+    test6()

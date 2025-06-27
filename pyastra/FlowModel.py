@@ -5,6 +5,9 @@ import enum
 from ns import ns
 from system import Common
 
+# 原版有 10ns 的发送延迟，这里加上去
+communication_delay = 10 
+
 class RingFlowModel:
     def __init__(self, 
                 nodes,
@@ -96,6 +99,7 @@ class RingFlowModel:
         #TODO: compute this npu_time
         to_npu_time = 0
 
+        communication_delays = 0 
         for j in range( int( len(self.nodes) / 8 ) ):
             arr = list(range(j * 8, j*8 + 8 ) )
             for a in arr:
@@ -104,9 +108,10 @@ class RingFlowModel:
                         self.p2pSend( self.nodes[a], self.nodes[b], single_batch)
 
             ns.Simulator.Run()
+            communication_delays += communication_delay
 
         endT = ns.Simulator.Now().GetNanoSeconds()
-        return endT - startT + to_npu_time
+        return endT - startT + to_npu_time + communication_delays
 
 
     def runAllGather(self, data_size):
@@ -115,6 +120,8 @@ class RingFlowModel:
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
         to_npu_time = 0
+
+        communication_delays = 0
 
         for t in range(7):
             for j in self.nodes:
@@ -129,10 +136,11 @@ class RingFlowModel:
                     self.p2pSend( send_node, recv_node, single_batch)
             
             ns.Simulator.Run()
+            communication_delays += communication_delay
 
         endT = ns.Simulator.Now().GetNanoSeconds()
 
-        return endT - startT + to_npu_time  
+        return endT - startT + to_npu_time + communication_delays
 
 
     def runAllReduce(self, data_size):
@@ -141,6 +149,8 @@ class RingFlowModel:
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
         to_npu_time = 0
+
+        communication_delays = 0
 
         for t in range(14):
             for j in self.nodes:
@@ -155,11 +165,12 @@ class RingFlowModel:
                     self.p2pSend( send_node, recv_node, single_batch)
             
             ns.Simulator.Run()
+            communication_delays += communication_delay
 
 
         endT = ns.Simulator.Now().GetNanoSeconds()
         
-        return endT - startT + to_npu_time  
+        return endT - startT + to_npu_time  + communication_delays
 
 
     def runAll2All(self, data_size): 
@@ -167,6 +178,7 @@ class RingFlowModel:
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
         to_npu_time = 0
+        communication_delays = 10
 
         for j in range( int( len(self.nodes) / 8 ) ):
             arr = list(range(j * 8, j*8 + 8 ) )
@@ -176,9 +188,11 @@ class RingFlowModel:
                         self.p2pSend( self.nodes[a], self.nodes[b], single_batch)
 
             ns.Simulator.Run()
+            communication_delays += communication_delay
+
 
         endT = ns.Simulator.Now().GetNanoSeconds()
-        return endT - startT + to_npu_time
+        return endT - startT + to_npu_time + communication_delays
 
     def runAllReduceAll2All(self, data_size):
         return 0  
@@ -277,6 +291,7 @@ class NcclTreeFlowModel:
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
         to_npu_time = 0
+        communication_delays = 0 
 
         for j in range( int(len(self.nodes) / 8)  ):
             arr = list(range(j * 8, j*8 + 8 ) )
@@ -286,9 +301,10 @@ class NcclTreeFlowModel:
                         self.p2pSend( self.nodes[a], self.nodes[b], single_batch)
 
             ns.Simulator.Run()
+            communication_delays += communication_delay
 
         endT = ns.Simulator.Now().GetNanoSeconds()
-        return endT - startT + to_npu_time
+        return endT - startT + to_npu_time + communication_delays
 
 
     def runAllGather(self, data_size):
@@ -297,6 +313,7 @@ class NcclTreeFlowModel:
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
         to_npu_time = 0
+        communication_delays = 0
 
         for t in range(7):
             for j in self.nodes:
@@ -311,9 +328,11 @@ class NcclTreeFlowModel:
                     self.p2pSend( send_node, recv_node, single_batch)
             
             ns.Simulator.Run()
+            communication_delays += communication_delay
+
 
         endT = ns.Simulator.Now().GetNanoSeconds()
-        return endT - startT + to_npu_time  
+        return endT - startT + to_npu_time  + communication_delays
 
     def runAllReduce(self, data_size):
         single_batch = int(data_size / 4)
@@ -321,6 +340,7 @@ class NcclTreeFlowModel:
         startT = ns.Simulator.Now().GetNanoSeconds()
         #TODO: compute this npu_time
         to_npu_time = 0
+        communication_delays = 0
 
         for t in range(4):
             for node in self.nodes:
@@ -329,10 +349,10 @@ class NcclTreeFlowModel:
                 self.p2pSend( self.nvswitchs[0], node, single_batch)
             
             ns.Simulator.Run()
-
+            communication_delays += communication_delay
 
         endT = ns.Simulator.Now().GetNanoSeconds()
-        return endT - startT + to_npu_time  
+        return endT - startT + to_npu_time  + communication_delays
 
 
 
@@ -343,7 +363,8 @@ class NcclTreeFlowModel:
 
         #TODO: compute this npu_time
         to_npu_time = 0
-
+        communication_delays = 0
+        
         for j in range( int( len(self.nodes) / 8 ) ):
             arr = list(range(j * 8, j*8 + 8 ) )
             for a in arr:
@@ -352,9 +373,10 @@ class NcclTreeFlowModel:
                         self.p2pSend( self.nodes[a], self.nodes[b], single_batch)
 
             ns.Simulator.Run()
-
+            communication_delays += communication_delay
+            
         endT = ns.Simulator.Now().GetNanoSeconds()
-        return endT - startT + to_npu_time
+        return endT - startT + to_npu_time + communication_delays 
 
     def runAllReduceAll2All(self, data_size):
         return 0 
