@@ -16,7 +16,7 @@ def user_param_parse() -> argparse.Namespace:
 
 def main():
     args = user_param_parse()
-    # print(args.network_topo)
+    from ns import ns 
     import net
     from net import ReadConf, SetConfig, SetupNetwork
     from workload import Workload
