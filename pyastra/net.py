@@ -1023,7 +1023,8 @@ def SetupNetwork(qp_finish, send_finish):
         if enable_trace:
             qbb.EnableTracing(trace_output, trace_nodes)
         
-        sim_setting = ns.CreateObject[ns.SimSetting]()
+        # sim_setting = ns.CreateObject[ns.SimSetting]()
+        sim_setting = ns.SimSetting()
         for node, interfaces in nbr2if.items():
             for neighbor, info in interfaces.items():
                 dev = node.GetDevice(info.idx).GetObject[ns.QbbNetDevice]()
